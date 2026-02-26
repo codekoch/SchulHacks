@@ -31,6 +31,18 @@
         textarea::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        /* Styling für den Vollbildmodus */
+        #resultsContainer:fullscreen {
+            padding: 2rem;
+            overflow-y: auto;
+            background-color: #ffffff;
+        }
+        /* Safari Fallback */
+        #resultsContainer:-webkit-full-screen {
+            padding: 2rem;
+            overflow-y: auto;
+            background-color: #ffffff;
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800">
@@ -100,12 +112,18 @@
 
             <!-- Right Column: Output / Results -->
             <div class="lg:col-span-2">
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 min-h-full">
+                <div id="resultsContainer" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 min-h-full">
                     <div class="flex justify-between items-center mb-6 pb-2 border-b border-slate-100">
                         <h2 class="text-xl font-bold text-slate-800">Ergebnis</h2>
-                        <button id="copyBtn" class="hidden text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 px-3 rounded-md transition-colors font-medium">
-                            Als Text kopieren
-                        </button>
+                        <div class="flex gap-2">
+                            <button id="copyBtn" class="hidden text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 px-3 rounded-md transition-colors font-medium">
+                                Als Text kopieren
+                            </button>
+                            <button id="fullscreenBtn" class="hidden text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-1.5 px-3 rounded-md transition-colors font-medium items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                                Vollbild
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Hier werden die generierten Gruppen eingefügt -->
@@ -131,9 +149,11 @@
             const generateBtn = document.getElementById('generateBtn');
             const clearBtn = document.getElementById('clearBtn');
             const resultsArea = document.getElementById('resultsArea');
+            const resultsContainer = document.getElementById('resultsContainer');
             const errorBox = document.getElementById('errorBox');
             const errorMessage = document.getElementById('errorMessage');
             const copyBtn = document.getElementById('copyBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
 
             // Funktion um saubere Namen aus der Textarea zu holen
             const getCleanNames = () => {
@@ -251,8 +271,10 @@
                     resultsArea.appendChild(card);
                 });
 
-                // Kopier-Button anzeigen
+                // Buttons anzeigen
                 copyBtn.classList.remove('hidden');
+                fullscreenBtn.classList.remove('hidden');
+                fullscreenBtn.classList.add('flex');
             };
 
             // Event Listeners
@@ -312,6 +334,43 @@
                 }
                 document.body.removeChild(textArea);
             });
+
+            // Vollbild-Logik
+            fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                    if (resultsContainer.requestFullscreen) {
+                        resultsContainer.requestFullscreen().catch(err => {
+                            showError(`Vollbildmodus konnte nicht aktiviert werden: ${err.message}`);
+                        });
+                    } else if (resultsContainer.webkitRequestFullscreen) { /* Safari */
+                        resultsContainer.webkitRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) { /* Safari */
+                        document.webkitExitFullscreen();
+                    }
+                }
+            });
+
+            // UI Update bei Wechsel des Vollbildmodus (z.B. auch durch ESC-Taste)
+            document.addEventListener('fullscreenchange', updateFullscreenButton);
+            document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+
+            function updateFullscreenButton() {
+                if (document.fullscreenElement || document.webkitFullscreenElement) {
+                    fullscreenBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> Schließen`;
+                    fullscreenBtn.classList.replace('bg-indigo-100', 'bg-red-100');
+                    fullscreenBtn.classList.replace('text-indigo-700', 'text-red-700');
+                    fullscreenBtn.classList.replace('hover:bg-indigo-200', 'hover:bg-red-200');
+                } else {
+                    fullscreenBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg> Vollbild`;
+                    fullscreenBtn.classList.replace('bg-red-100', 'bg-indigo-100');
+                    fullscreenBtn.classList.replace('text-red-700', 'text-indigo-700');
+                    fullscreenBtn.classList.replace('hover:bg-red-200', 'hover:bg-indigo-200');
+                }
+            }
             
             // Initialer Aufruf um den Zähler auf 0 zu setzen
             namesInput.dispatchEvent(new Event('input'));
