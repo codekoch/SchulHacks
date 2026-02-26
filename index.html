@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zufälliger Gruppengenerator</title>
+    <!-- Tailwind CSS für das moderne und responsive Design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Sanfte Animation für das Einblenden der Gruppen */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .group-card {
+            animation: fadeIn 0.4s ease-out forwards;
+            opacity: 0;
+        }
+        /* Custom Scrollbar für die Textarea für einen cleaneren Look */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
+
+    <div class="max-w-6xl mx-auto p-4 md:p-8">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2">
+                Zufalls-Gruppengenerator
+            </h1>
+            <p class="text-slate-500 max-w-2xl mx-auto">
+                Füge beliebig viele Namen ein und teile sie zufällig in beliebig viele Gruppen auf.
+            </p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Inputs -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                <!-- Error Message Box (versteckt im Standard) -->
+                <div id="errorBox" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-sm" role="alert">
+                    <p id="errorMessage" class="font-medium"></p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <label for="namesInput" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Namensliste (ein Name pro Zeile)
+                    </label>
+                    <textarea 
+                        id="namesInput" 
+                        rows="12" 
+                        class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow resize-y"
+                        placeholder="Max Mustermann&#10;Anna Schmidt&#10;Tom Müller&#10;Lisa Meyer&#10;..."
+                    ></textarea>
+                    <div class="mt-2 text-sm text-slate-500 flex justify-between">
+                        <span id="nameCount">0 Namen erkannt</span>
+                        <button id="clearBtn" class="text-red-500 hover:text-red-700 transition-colors">Liste leeren</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <label for="groupCount" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Anzahl der Gruppen
+                    </label>
+                    <input 
+                        type="number" 
+                        id="groupCount" 
+                        min="1" 
+                        value="2" 
+                        class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 mb-4 transition-shadow"
+                    >
+                    
+                    <button 
+                        id="generateBtn" 
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-sm flex justify-center items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                        </svg>
+                        Gruppen jetzt erstellen
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Output / Results -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 min-h-full">
+                    <div class="flex justify-between items-center mb-6 pb-2 border-b border-slate-100">
+                        <h2 class="text-xl font-bold text-slate-800">Ergebnis</h2>
+                        <button id="copyBtn" class="hidden text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 px-3 rounded-md transition-colors font-medium">
+                            Als Text kopieren
+                        </button>
+                    </div>
+
+                    <!-- Hier werden die generierten Gruppen eingefügt -->
+                    <div id="resultsArea" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="col-span-full text-center py-12 text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <p>Füge links Namen ein und klicke auf "Gruppen erstellen",<br>um das Ergebnis hier zu sehen.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const namesInput = document.getElementById('namesInput');
+            const nameCountDisplay = document.getElementById('nameCount');
+            const groupCountInput = document.getElementById('groupCount');
+            const generateBtn = document.getElementById('generateBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const resultsArea = document.getElementById('resultsArea');
+            const errorBox = document.getElementById('errorBox');
+            const errorMessage = document.getElementById('errorMessage');
+            const copyBtn = document.getElementById('copyBtn');
+
+            // Funktion um saubere Namen aus der Textarea zu holen
+            const getCleanNames = () => {
+                const text = namesInput.value;
+                return text.split('\n')
+                           .map(name => name.trim())
+                           .filter(name => name !== '');
+            };
+
+            // Update der Zähler-Anzeige bei Eingabe
+            namesInput.addEventListener('input', () => {
+                const count = getCleanNames().length;
+                nameCountDisplay.textContent = `${count} ${count === 1 ? 'Name' : 'Namen'} erkannt`;
+            });
+
+            // Funktion zum Anzeigen von Fehlern (ersetzt window.alert)
+            const showError = (msg) => {
+                errorMessage.textContent = msg;
+                errorBox.classList.remove('hidden');
+                // Fehlermeldung nach 5 Sekunden ausblenden
+                setTimeout(() => {
+                    errorBox.classList.add('hidden');
+                }, 5000);
+            };
+
+            // Fisher-Yates Algorithmus zum Mischen des Arrays
+            const shuffleArray = (array) => {
+                let currentIndex = array.length, randomIndex;
+                while (currentIndex !== 0) {
+                    randomIndex = Math.floor(Math.random() * currentIndex);
+                    currentIndex--;
+                    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+                }
+                return array;
+            };
+
+            // Hauptfunktion zur Generierung der Gruppen
+            const generateGroups = () => {
+                // Vorherige Fehler ausblenden
+                errorBox.classList.add('hidden');
+
+                const names = getCleanNames();
+                const groupCount = parseInt(groupCountInput.value, 10);
+
+                // Validierung
+                if (names.length === 0) {
+                    showError('Bitte gib mindestens einen Namen in das Textfeld ein.');
+                    namesInput.focus();
+                    return;
+                }
+                if (isNaN(groupCount) || groupCount < 1) {
+                    showError('Bitte gib eine gültige Anzahl von Gruppen ein (mindestens 1).');
+                    groupCountInput.focus();
+                    return;
+                }
+                if (groupCount > names.length) {
+                    showError(`Warnung: Es gibt mehr Gruppen (${groupCount}) als Namen (${names.length}). Einige Gruppen werden leer bleiben.`);
+                }
+
+                // Namen mischen
+                const shuffledNames = shuffleArray([...names]);
+
+                // Array von Arrays für die Gruppen initialisieren
+                const groups = Array.from({ length: groupCount }, () => []);
+
+                // Namen gleichmäßig verteilen (Karten-Austielen-Methode)
+                shuffledNames.forEach((name, index) => {
+                    groups[index % groupCount].push(name);
+                });
+
+                // Ergebnis rendern
+                renderResults(groups);
+            };
+
+            // Rendert die Gruppen in das HTML Layout
+            const renderResults = (groups) => {
+                resultsArea.innerHTML = ''; // Vorherige Ergebnisse löschen
+
+                // Layout-Anpassung basierend auf Anzahl der Gruppen
+                if (groups.length === 1) {
+                    resultsArea.className = "grid grid-cols-1 gap-4";
+                } else if (groups.length === 2) {
+                    resultsArea.className = "grid grid-cols-1 sm:grid-cols-2 gap-4";
+                } else {
+                    resultsArea.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4";
+                }
+
+                groups.forEach((group, index) => {
+                    const card = document.createElement('div');
+                    // Verzögerte Animation für einen schönen Kaskaden-Effekt
+                    card.style.animationDelay = `${index * 0.05}s`;
+                    card.className = 'group-card bg-indigo-50 border border-indigo-100 rounded-lg p-4 shadow-sm';
+                    
+                    const groupTitle = document.createElement('h3');
+                    groupTitle.className = 'font-bold text-indigo-900 mb-3 border-b border-indigo-200 pb-2 flex justify-between items-center';
+                    groupTitle.innerHTML = `Gruppe ${index + 1} <span class="bg-indigo-200 text-indigo-800 text-xs py-1 px-2 rounded-full">${group.length}</span>`;
+                    
+                    const list = document.createElement('ul');
+                    list.className = 'space-y-1';
+                    
+                    if (group.length === 0) {
+                        list.innerHTML = `<li class="text-sm text-slate-400 italic">Keine Mitglieder</li>`;
+                    } else {
+                        group.forEach(name => {
+                            const li = document.createElement('li');
+                            li.className = 'text-slate-700 bg-white px-2 py-1.5 rounded border border-slate-100 text-sm shadow-sm flex items-center before:content-["•"] before:text-indigo-400 before:mr-2 before:text-lg';
+                            // Sichere Zuweisung, falls HTML-Zeichen im Namen sind
+                            li.appendChild(document.createTextNode(name));
+                            list.appendChild(li);
+                        });
+                    }
+
+                    card.appendChild(groupTitle);
+                    card.appendChild(list);
+                    resultsArea.appendChild(card);
+                });
+
+                // Kopier-Button anzeigen
+                copyBtn.classList.remove('hidden');
+            };
+
+            // Event Listeners
+            generateBtn.addEventListener('click', generateGroups);
+
+            clearBtn.addEventListener('click', () => {
+                namesInput.value = '';
+                nameCountDisplay.textContent = '0 Namen erkannt';
+                namesInput.focus();
+            });
+
+            // Erlaubt das Auslösen der Erstellung durch Strg+Enter im Textfeld
+            namesInput.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    generateGroups();
+                }
+            });
+
+            // Funktion um Ergebnisse als Text in die Zwischenablage zu kopieren
+            copyBtn.addEventListener('click', () => {
+                const groupElements = resultsArea.querySelectorAll('.group-card');
+                if (groupElements.length === 0) return;
+
+                let exportText = '';
+                groupElements.forEach((card, index) => {
+                    exportText += `--- Gruppe ${index + 1} ---\n`;
+                    const items = card.querySelectorAll('li');
+                    items.forEach(item => {
+                        // Den Text auslesen, den generierten Bullet-Point (vor ::before) ignorieren wir logisch im JS-TextNode
+                        if (!item.classList.contains('italic')) {
+                             exportText += `${item.textContent}\n`;
+                        } else {
+                             exportText += `(Leer)\n`;
+                        }
+                    });
+                    exportText += '\n';
+                });
+
+                // In die Zwischenablage kopieren (kompatibel mit iframe-Einschränkungen)
+                const textArea = document.createElement("textarea");
+                textArea.value = exportText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    
+                    // Visuelles Feedback
+                    const originalText = copyBtn.innerText;
+                    copyBtn.innerText = 'Kopiert! ✓';
+                    copyBtn.classList.add('bg-green-100', 'text-green-700');
+                    setTimeout(() => {
+                        copyBtn.innerText = originalText;
+                        copyBtn.classList.remove('bg-green-100', 'text-green-700');
+                    }, 2000);
+                } catch (err) {
+                    showError('Kopieren fehlgeschlagen. Bitte markiere den Text manuell.');
+                }
+                document.body.removeChild(textArea);
+            });
+            
+            // Initialer Aufruf um den Zähler auf 0 zu setzen
+            namesInput.dispatchEvent(new Event('input'));
+        });
+    </script>
+</body>
+</html>
