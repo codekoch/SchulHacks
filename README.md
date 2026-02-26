@@ -1,1 +1,1 @@
-<a href="https://codekoch.github.io/SchulHacks/zuffigoup.html">zuffigoup.html</a>
+<a href="https://codekoch.github.io/SchulHacks/zuffigroup.html">zuffigroup.html</a>
