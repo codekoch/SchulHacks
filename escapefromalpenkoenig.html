@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape from Alpenkönig</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-main: #33ff33;
+            --text-highlight: #ffcc00;
+            --text-action: #ff33ff;
+            --border-color: #555555;
+            --inv-bg: #111111;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--bg-color);
+            border: 4px solid var(--border-color);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(51, 255, 51, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #222;
+            color: var(--text-highlight);
+            text-align: center;
+            padding: 15px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-bottom: 2px solid var(--border-color);
+            letter-spacing: 2px;
+        }
+
+        #screen {
+            padding: 20px;
+            height: 300px;
+            overflow-y: auto;
+            border-bottom: 2px solid var(--border-color);
+            background: linear-gradient(to bottom, #0a0a0a, #000000);
+        }
+
+        #scene-title {
+            color: var(--text-action);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            text-decoration: underline;
+        }
+
+        #story {
+            line-height: 1.6;
+        }
+
+        #message-box {
+            color: var(--text-highlight);
+            font-style: italic;
+            margin-top: 15px;
+            min-height: 1.6em;
+            font-weight: bold;
+        }
+
+        #lower-panel {
+            display: flex;
+            height: 250px;
+        }
+
+        #choices-container {
+            flex: 2;
+            padding: 15px;
+            border-right: 2px solid var(--border-color);
+            overflow-y: auto;
+        }
+
+        .choice-btn {
+            display: block;
+            width: 100%;
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px dashed var(--border-color);
+            padding: 10px;
+            margin-bottom: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .choice-btn:hover {
+            background-color: var(--text-main);
+            color: var(--bg-color);
+            border-style: solid;
+        }
+        
+        .choice-btn.examine {
+            color: #88ccff;
+            border-color: #335577;
+        }
+        .choice-btn.examine:hover {
+            background-color: #88ccff;
+            color: #000;
+        }
+
+        #inventory-container {
+            flex: 1;
+            padding: 15px;
+            background-color: var(--inv-bg);
+        }
+
+        #inventory-container h3 {
+            margin-top: 0;
+            color: var(--text-highlight);
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        #inventory-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #inventory-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-main); }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <header>🏔️ ESCAPE FROM ALPENKÖNIG 🍻</header>
+    
+    <div id="screen">
+        <div id="scene-title">Lade...</div>
+        <div id="story"></div>
+        <div id="message-box"></div>
+    </div>
+    
+    <div id="lower-panel">
+        <div id="choices-container">
+            <!-- Buttons werden hier generiert -->
+        </div>
+        <div id="inventory-container">
+            <h3>🎒 Inventar</h3>
+            <ul id="inventory-list">
+                <!-- Inventar wird hier generiert -->
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- SPIELSTATUS ---
+    let state = {
+        knowsCode: false,
+        hasNaOH: false,
+        acidNeutralized: false,
+        hasKey: false,
+        saunaUnlocked: false,
+        hasCrowbar: false,
+        kellerUnlocked: false,
+        barricadeBroken: false,
+        beerCount: 0
+    };
+
+    // --- NACHRICHTEN SYSTEM ---
+    function showMessage(msg) {
+        const msgBox = document.getElementById('message-box');
+        msgBox.innerText = `>> ${msg}`;
+        // Blink-Effekt
+        msgBox.style.opacity = 0;
+        setTimeout(() => msgBox.style.opacity = 1, 50);
+    }
+
+    // --- RÄUME & LOGIK ---
+    const rooms = {
+        bar: {
+            title: "Die Hotelbar",
+            text: "Du stehst mit deiner Lehrergruppe an der Bar des 'Hotel Alpenkönig' in Seefeld. Die pädagogische Konferenz war furchtbar, die Klausurenkorrekturen rufen, aber ihr wollt eigentlich nur noch in die Enzianhütte auf ein Bier. \n\nProblem: Ein massiver Schneesturm blockiert den Haupteingang. Der mürrische Barkeeper poliert apathisch Gläser und murmelt etwas von 'früher sind wir durch den Keller gegangen'.",
+            choices: [
+                { type: 'examine', text: "Sprich mit dem Barkeeper", action: () => showMessage("Barkeeper: 'Lasst mich in Ruhe. Der alte Hausmeister hat irgendwo im Keller einen Durchgang zur Tennishalle gebaut. Das ist euer einziger Weg.'") },
+                { type: 'examine', text: "Untersuche den klebrigen Bierdeckel auf dem Tresen", action: () => showRoom('bierdeckel') },
+                { type: 'action', text: "Gehe durch die Schwingtür in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        bierdeckel: {
+            title: "Der klebrige Bierdeckel",
+            text: "Auf der Rückseite des Bierdeckels hat jemand mit Kugelschreiber eine Notiz hinterlassen:\n\n'PIN für den Kellerzugang: f(x) = x² - 8x + 15. Die Nullstellen bilden den Code (Format: x1,x2 ohne Komma).'",
+            choices: [
+                { type: 'action', text: "Als Mathe-Lehrer das Rätsel lösen!", condition: () => !state.knowsCode, action: () => {
+                    state.knowsCode = true;
+                    updateInventory();
+                    showMessage("Pah, lächerlich! x1=3 und x2=5. Der Code ist also 0305. Das merke ich mir!");
+                    showRoom('bar');
+                }},
+                { type: 'action', text: "Zurück zur Bar", action: () => showRoom('bar') }
+            ]
+        },
+        flur: {
+            title: "Der dunkle Flur",
+            text: "Ein spärlich beleuchteter Flur. Der Teppich hat ein Muster, das bei längerem Hinsehen Kopfschmerzen verursacht – schlimmer als der Overhead-Projektor in Raum 204. Hier steht ein unbeaufsichtigter Reinigungswagen der Putzkolonne.",
+            choices: [
+                { type: 'examine', text: "Untersuche den Reinigungswagen", condition: () => !state.hasNaOH, action: () => {
+                    state.hasNaOH = true;
+                    updateInventory();
+                    showMessage("Als Chemie-Lehrer erkennst du sofort das hochkonzentrierte Natriumhydroxid (NaOH) in Granulatform. Du steckst eine Dose ein. Man weiß ja nie!");
+                    showRoom('flur');
+                }},
+                { type: 'action', text: "Gehe zur Tür 'Schwimmbad'", action: () => showRoom('schwimmbad') },
+                { type: 'action', text: "Gehe zur Tür 'Sauna'", action: () => state.saunaUnlocked ? showRoom('sauna_innen') : showRoom('sauna_tuer') },
+                { type: 'action', text: "Gehe zur Tür 'Fitnessraum'", action: () => showRoom('fitness') },
+                { type: 'action', text: "Zurück zur Bar", action: () => showRoom('bar') }
+            ]
+        },
+        schwimmbad: {
+            title: "Das stillgelegte Schwimmbad",
+            text: "Die blauen Kacheln sind dreckig, das große Becken ist längst ohne Wasser. Am tiefsten Punkt des Beckens hat sich jedoch eine trübe, übelriechende Pfütze gebildet. \n\nMitten in dieser Pfütze glänzt ein alter, messingfarbener Schlüssel.",
+            choices: [
+                { type: 'examine', text: "Untersuche die Pfütze", action: () => showMessage("Es riecht nach Schwefelwasserstoff. Jemand hat hier extrem sauren Entkalker (pH 1) verschüttet. Wenn du da reingreifst, kannst du morgen keine Kreide mehr halten!") },
+                { type: 'action', text: "Greife mit der Hand nach dem Schlüssel", condition: () => !state.acidNeutralized, action: () => showMessage("Autsch! Das brennt höllisch! Du ziehst die Hand schnell zurück. Du musst die Säure irgendwie neutralisieren.") },
+                { type: 'action', text: "Schütte das NaOH aus dem Inventar in die Pfütze", condition: () => state.hasNaOH && !state.acidNeutralized, action: () => {
+                    state.acidNeutralized = true;
+                    showMessage("Es zischt, blubbert und dampft! Eine wunderschöne Säure-Base-Reaktion. Die Lösung ist nun pH-neutral (und etwas salzig).");
+                    showRoom('schwimmbad');
+                }},
+                { type: 'action', text: "Nimm den Schlüssel", condition: () => state.acidNeutralized && !state.hasKey, action: () => {
+                    state.hasKey = true;
+                    updateInventory();
+                    showMessage("Du hast den alten Saunaschlüssel aus dem neutralisierten Wasser gefischt.");
+                    showRoom('schwimmbad');
+                }},
+                { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        sauna_tuer: {
+            title: "Vor der Sauna",
+            text: "Die Tür aus massivem Holz ist fest verschlossen. Ein altes, verrostetes Vorhängeschloss hängt an der Verriegelung.",
+            choices: [
+                { type: 'action', text: "Benutze den messingfarbenen Schlüssel", condition: () => state.hasKey, action: () => {
+                    state.saunaUnlocked = true;
+                    showMessage("Der Schlüssel passt perfekt. Mit einem lauten *Klack* öffnet sich das Schloss.");
+                    showRoom('sauna_innen');
+                }},
+                { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        sauna_innen: {
+            title: "In der Sauna",
+            text: "Es ist eiskalt hier drinnen. Der Geruch von altem Fichtennadel-Aufguss hängt in der Luft. Die Bänke sind verstaubt. Ganz hinten unter dem Steinofen klemmt etwas Rotes.",
+            choices: [
+                { type: 'examine', text: "Untersuche das rote Ding unter dem Ofen", condition: () => !state.hasCrowbar, action: () => showMessage("Es ist ein massives, rotes Brecheisen aus Stahl. Typisches Sauna-Zubehör.") },
+                { type: 'action', text: "Nimm das Brecheisen", condition: () => !state.hasCrowbar, action: () => {
+                    state.hasCrowbar = true;
+                    updateInventory();
+                    showMessage("Du zerrst das Brecheisen unter dem Ofen hervor. Schwer und gefährlich. Ein hervorragendes pädagogisches Werkzeug.");
+                    showRoom('sauna_innen');
+                }},
+                { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        fitness: {
+            title: "Der Fitnessraum",
+            text: "Rostige Hanteln und ein defektes Laufband zeugen von besseren Zeiten. An der hinteren Wand befindet sich eine schwere Stahltür, die augenscheinlich in den Keller führt. \n\nNeben der Tür ist ein elektronisches Tastenfeld angebracht.",
+            choices: [
+                { type: 'examine', text: "Untersuche die Stahltür", action: () => showMessage("Massiver Stahl. Ohne den 4-stelligen PIN-Code bewegt die sich keinen Millimeter.") },
+                { type: 'action', text: "Gib einen zufälligen Code ein (z.B. 1234)", condition: () => !state.kellerUnlocked, action: () => showMessage("*Mööööp!* Rotes Licht. Das war falsch.") },
+                { type: 'action', text: "Gib den Code '0305' (Nullstellen) ein", condition: () => state.knowsCode && !state.kellerUnlocked, action: () => {
+                    state.kellerUnlocked = true;
+                    showMessage("*Biep Biep Biep - Klick!* Das grüne Licht leuchtet auf. Die Stahltür schwingt schwerfällig auf.");
+                    showRoom('fitness');
+                }},
+                { type: 'action', text: "Betrete den dunklen Keller", condition: () => state.kellerUnlocked, action: () => showRoom('keller') },
+                { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        keller: {
+            title: "Die Kellergewölbe",
+            text: "Du betrittst eine Art Tropfsteinhöhle. Die Außenmauern des Hotels wurden hier direkt in den nackten Bergfels gehauen. Wasser tropft von der Decke.\n\nAm Ende des Ganges blockiert eine kreuz und quer vernagelte Holzwand den Durchgang. Ein verblasstes Schild sagt: 'Gefahr - Alte Tennishalle'.",
+            choices: [
+                { type: 'examine', text: "Untersuche die vernagelte Wand", action: () => showMessage("Die Bretter sind alt, aber mit dicken Zimmermannsnägeln befestigt. Mit bloßen Händen, wie ein Sportlehrer, kommst du hier nicht weiter.") },
+                { type: 'action', text: "Reiße die Bretter mit bloßen Händen ab", condition: () => !state.barricadeBroken, action: () => showMessage("Du ziehst dir einen riesigen Splitter ein. Du fluchst lauter als ein Schüler, der beim Spicken erwischt wurde. Das klappt so nicht.") },
+                { type: 'action', text: "Benutze das Brecheisen bei den Brettern", condition: () => state.hasCrowbar && !state.barricadeBroken, action: () => {
+                    state.barricadeBroken = true;
+                    showMessage("*KRRAAAACK!* Mit der Hebelkraft (Physik sei Dank!) reißt du die Bretter problemlos von der Wand. Der Weg ist frei!");
+                    showRoom('keller');
+                }},
+                { type: 'action', text: "Zwänge dich durch die Öffnung in die Tennishalle", condition: () => state.barricadeBroken, action: () => showRoom('tennishalle') },
+                { type: 'action', text: "Zurück zum Fitnessraum", action: () => showRoom('fitness') }
+            ]
+        },
+        tennishalle: {
+            title: "Die alte Tennishalle",
+            text: "Deine Füße knirschen auf altem, rotem Sand. Die riesige Halle ist dunkel, nur Notausgangs-Leuchten werfen ein grünes Licht.\n\nAuf der gegenüberliegenden Seite siehst du eine Tür, unter der ein warmer, gemütlicher Lichtschein hervorblitzt. Du hörst gedämpfte Volksmusik und das Klirren von Gläsern.",
+            choices: [
+                { type: 'action', text: "Öffne die Tür und trete ins Licht!", action: () => showRoom('finale') },
+                { type: 'action', text: "Zurück in den unheimlichen Keller", action: () => showRoom('keller') }
+            ]
+        },
+        finale: {
+            title: "🍻 Die Enzianhütte 🍻",
+            text: "DU HAST ES GESCHAFFT!\n\nDu stößt die Tür auf und stehst direkt hinter dem Tresen der rustikalen Enzianhütte. Das Kaminfeuer prasselt. Deine Lehrerkollegen drängen durch die Tür hinter dir her.\n\nDer Wirt schaut erst verdutzt, greift dann aber grinsend zur großen Flasche Zirbenschnaps und zapft frisches Bier. Die Konferenz ist offiziell beendet!",
+            choices: [
+                { type: 'action', text: "Trinke einen Zirbenschnaps!", action: () => {
+                    state.beerCount++;
+                    showMessage(`Prost! Das war Schnaps Nummer ${state.beerCount}.`);
+                    if(state.beerCount > 4) {
+                        alert("Du bist jetzt offiziell betrunken. Zeit fürs Bett!");
+                        location.reload(); // Spiel neu laden
+                    }
+                }},
+                { type: 'action', text: "Spielzeug beiseite legen und neu starten (Reset)", action: () => {
+                    location.reload();
+                }}
+            ]
+        }
+    };
+
+    // --- UI UPDATES ---
+    function updateInventory() {
+        const invList = document.getElementById('inventory-list');
+        invList.innerHTML = '';
+        
+        let items = [];
+        if (state.knowsCode) items.push("🧠 Code: 0305");
+        if (state.hasNaOH) items.push("🧪 Natriumhydroxid (NaOH)");
+        if (state.hasKey) items.push("🔑 Messing-Schlüssel");
+        if (state.hasCrowbar) items.push("🔧 Rotes Brecheisen");
+
+        if (items.length === 0) {
+            invList.innerHTML = "<li style='color: #666;'><i>Leere Taschen</i></li>";
+        } else {
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.innerText = item;
+                invList.appendChild(li);
+            });
+        }
+    }
+
+    function showRoom(roomKey) {
+        // Lösche alte Systemnachrichten
+        document.getElementById('message-box').innerText = "";
+
+        const room = rooms[roomKey];
+        document.getElementById('scene-title').innerText = room.title;
+        
+        // Text mit leichten Verzögerungen für den Retro-Vibe anzeigen (optional, hier direkt)
+        document.getElementById('story').innerText = room.text;
+        
+        const choicesContainer = document.getElementById('choices-container');
+        choicesContainer.innerHTML = ''; // Alte Buttons löschen
+
+        room.choices.forEach(choice => {
+            // Nur anzeigen, wenn Bedingung erfüllt oder keine Bedingung vorhanden
+            if (!choice.condition || choice.condition()) {
+                const btn = document.createElement('button');
+                btn.className = `choice-btn ${choice.type}`;
+                
+                // Präfix je nach Typ
+                let prefix = choice.type === 'examine' ? '👀 Untersuche: ' : '▶ Gehe/Mache: ';
+                if(choice.text.includes("Zurück")) prefix = '🔙 ';
+                
+                btn.innerText = prefix + choice.text;
+                btn.onclick = choice.action;
+                choicesContainer.appendChild(btn);
+            }
+        });
+
+        // Automatisch nach oben scrollen bei Raumwechsel
+        document.getElementById('screen').scrollTop = 0;
+    }
+
+    // --- SPIEL STARTEN ---
+    updateInventory();
+    showRoom('bar');
+
+</script>
+</body>
+</html>
