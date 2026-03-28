@@ -312,10 +312,15 @@
         leverOiled: false,
         barricadeBroken: false,
         hasFlashlight: false,
+        gangIlluminated: false,
         hasAkte: false,
+        evidenceDestroyed: false,
         hasPen: false,
+        circuitBridged: false,
         hasSlippers: false,
+        wearingSlippers: false,
         hasBowlingball: false,
+        ladderLowered: false,
         beerCount: 0
     };
 
@@ -354,19 +359,14 @@
             if (currentRoom === 'sauna_tuer' && !state.saunaUnlocked) {
                 state.saunaUnlocked = true;
                 msg = "Der rostige Schlüssel knirscht, aber das Schloss springt auf!";
-                showRoom('sauna_innen');
-                showMessage(msg);
-                return;
             } else {
-                msg = "Der Schlüssel passt hier nicht in Schlüsselloch.";
+                msg = "Der Schlüssel passt hier in kein Schlüsselloch.";
             }
         } 
         else if (itemId === 'crowbar') {
             if (currentRoom === 'keller' && !state.barricadeBroken) {
                 state.barricadeBroken = true;
                 msg = "*KRRAAAACK!* Mit purer Hebelkraft reißst du die dicken Bretter ab. Der Weg ist frei!";
-            } else if (currentRoom === 'heizung' && !state.doorToKellerOpen) {
-                msg = "Das Brecheisen ist zu dick für die Ritze der Eisentür. Du musst diesen verrosteten Hebel betätigen.";
             } else {
                 msg = "Du schwingst das Brecheisen drohend, aber es hilft in dieser Situation nicht weiter.";
             }
@@ -382,33 +382,53 @@
         else if (itemId === 'oil') {
             if (currentRoom === 'heizung' && !state.leverOiled) {
                 state.leverOiled = true;
-                msg = "Du tropfst das trübe Maschinenöl auf das Gelenk des Hebels. Er lässt sich nun bewegen!";
+                msg = "Du tropfst das trübe Maschinenöl auf das Gelenk des Hebels. Er lässt sich nun flüssig bewegen!";
             } else {
                 msg = "Du willst hier nicht alles ölig machen.";
             }
         }
+        else if (itemId === 'pen') {
+            if (currentRoom === 'konferenz' && !state.circuitBridged) {
+                state.circuitBridged = true;
+                msg = "Du klemmst den massiven Goldfüller zwischen die durchtrennten Kabel. Gold leitet hervorragend! Ein Riegel klickt und das Whiteboard schwingt auf.";
+            } else {
+                msg = "Ein wunderschöner goldener Füller. Gut, um Sechsen unter Klausuren zu setzen, aber hier nutzlos.";
+            }
+        }
         else if (itemId === 'flashlight') {
-            if (currentRoom === 'langer_gang') {
-                msg = "Die Taschenlampe durchschneidet die Dunkelheit. Du siehst nun den Weg durch den grausigen Tunnel.";
-                // Dies triggert keinen neuen Zustand, sondern erlaubt einen Button im Raum "langer_gang".
+            if (currentRoom === 'langer_gang' && !state.gangIlluminated) {
+                state.gangIlluminated = true;
+                msg = "*Klick*. Die Taschenlampe durchschneidet die Dunkelheit. Du siehst nun, worauf du trittst...";
             } else {
                 msg = "Du schaltest die Taschenlampe an und wieder aus. Klick. Klack.";
             }
         }
-        // Useless Items
-        else if (itemId === 'akte') {
-            msg = "Du blätterst in der Akte: '...Gemeinde Reith bei Seefeld wusste von den illegalen Bauten. Die geheimen unterirdischen Komplexe des Hotel Alpenkönig sind strikt zu verschweigen...' Das erklärt einiges.";
-        }
-        else if (itemId === 'pen') {
-            msg = "Ein wunderschöner goldener Füller. Gut, um Sechsen unter Klausuren zu setzen, aber hier nutzlos.";
-        }
         else if (itemId === 'slippers') {
-            msg = "Flauschige weiße Hotel-Slipper. Du fühlst dich kurz wie ein VIP, steckst sie dann aber wieder ein.";
+            if (currentRoom === 'langer_gang' && !state.wearingSlippers) {
+                state.wearingSlippers = true;
+                msg = "Du tauschst deine harten Schuhe gegen die weichen Badeschlappen. Damit läufst du absolut lautlos wie ein Ninja.";
+            } else {
+                msg = "Du hältst die flauschigen Slipper in der Hand. Sehr weich.";
+            }
         }
         else if (itemId === 'bowlingball') {
-            msg = "Die Bowlingkugel ist unglaublich schwer in deiner Tasche. Warum trägst du die überhaupt herum?";
+            if (currentRoom === 'leiter_loch' && !state.ladderLowered) {
+                state.ladderLowered = true;
+                msg = "Mit einem Ächzen wuchtest du die schwere Kugel in den Eimer des Seilzugs. Das Gegengewicht zieht die Leiter zu dir nach unten!";
+            } else {
+                msg = "Die Bowlingkugel ist unglaublich schwer. Du willst sie eigentlich nur loswerden.";
+            }
+        }
+        else if (itemId === 'akte') {
+            if (currentRoom === 'tennishalle' && !state.evidenceDestroyed) {
+                state.evidenceDestroyed = true;
+                msg = "Der Aktenvernichter zieht die brisante Amtshaftungsklage gierig ein. *Rrrrrtsch!* Als das Papier zerstört ist, leuchtet das Sicherheitstor grün auf und entriegelt sich!";
+            } else {
+                msg = "Du liest: '...Gemeinde Reith wusste von den Bauten. Die geheimen unterirdischen Komplexe des Hotel Alpenkönig sind strikt zu verschweigen...'";
+            }
         }
 
+        updateInventory();
         showRoom(currentRoom); 
         showMessage(msg);
     }
@@ -446,7 +466,7 @@
             </svg>`,
             text: "Jemand hat hastig Notizen hinterlassen:\n\n'PIN für den Zugang nach unten: f(x) = x² - 8x + 15. Die Nullstellen bilden den Code (Format: x1,x2 ohne Komma).'",
             choices: [
-                { type: 'action', text: "Als Mathe-Genie das Rätsel lösen!", condition: () => !state.knowsCode, action: () => {
+                { type: 'action', text: "Die mathematische Formel ins Gehirn brennen", condition: () => !state.knowsCode, action: () => {
                     state.knowsCode = true;
                     updateInventory();
                     showMessage("x1=3 und x2=5. Der Code ist 0305! Eingeloggt.");
@@ -550,15 +570,16 @@
             image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
                 <rect width="64" height="36" fill="#2a2a35" />
                 <rect x="10" y="20" width="44" height="8" fill="#555" />
-                <rect x="20" y="5" width="24" height="12" fill="#eee" />
+                ${!state.circuitBridged ? `<rect x="20" y="5" width="24" height="12" fill="#eee" />` : `<rect x="2" y="5" width="24" height="12" fill="#eee" /><rect x="20" y="5" width="24" height="12" fill="#111" />`}
                 <rect x="20" y="16" width="24" height="1" fill="#aaa" />
+                ${state.circuitBridged ? `<rect x="42" y="10" width="4" height="1" fill="#ffd700" transform="rotate(45 44 10)" />` : `<circle cx="44" cy="10" r="1" fill="#ff3333" />`}
             </svg>`,
-            text: "Ein typischer, trister Tagungsraum. Flipcharts, ein langes Whiteboard an der Wand. Dir fällt auf, dass ein kalter Luftzug hinter dem Whiteboard hervorweht.",
+            text: "Ein typischer, trister Tagungsraum. Flipcharts und ein langes Whiteboard an der Wand. Dir fällt auf, dass ein kalter Luftzug hinter dem Whiteboard hervorweht.",
             choices: [
-                { type: 'action', text: "Schiebe das Whiteboard zur Seite", action: () => {
-                    showMessage("Hinter dem Board klafft ein Loch in der Wand, das in einen unbeleuchteten Raum führt...");
-                    showRoom('hinterzimmer');
+                { type: 'examine', text: "Untersuche das Whiteboard", condition: () => !state.circuitBridged, action: () => {
+                    showMessage("Das Board ist elektronisch verriegelt. Neben der Schiene ist ein Schaltkasten offen. Zwei Kabelenden hängen lose heraus, der Stromkreis ist unterbrochen.");
                 }},
+                { type: 'action', text: "Gehe in das verborgene Hinterzimmer", condition: () => state.circuitBridged, action: () => showRoom('hinterzimmer') },
                 { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
             ]
         },
@@ -574,10 +595,10 @@
             </svg>`,
             text: "Ein extrem verstörender Raum. Der Boden ist mit alten, abgewetzten Zirkusmatten ausgelegt. In der Mitte steht ein metallener Gynäkologenstuhl mit Lederriemen. Wer auch immer hier verweilt hat... du willst ihn nicht kennen.",
             choices: [
-                { type: 'examine', text: "Untersuche das rostige Regal", condition: () => !state.hasOil, action: () => {
+                { type: 'examine', text: "Untersuche das rostige Regal in der Ecke", condition: () => !state.hasOil, action: () => {
                     state.hasOil = true;
                     updateInventory();
-                    showMessage("Du findest eine alte Kanne mit trübem Schmieröl. Könnte nützlich sein.");
+                    showMessage("Du findest eine alte Kanne mit trübem Schmieröl.");
                     showRoom('hinterzimmer');
                 }},
                 { type: 'action', text: "Zurück in den Konferenzraum (Flucht!)", action: () => showRoom('konferenz') }
@@ -646,7 +667,7 @@
             </svg>`,
             text: "Rostige Hanteln. Im Boden befindet sich eine quadratische, schwere Metallluke mit einem elektronischen Tastenfeld daneben.",
             choices: [
-                { type: 'action', text: "Steige die Luke hinab", condition: () => state.kellerUnlocked, action: () => showRoom('heizung') },
+                { type: 'action', text: "Steige die geöffnete Luke hinab", condition: () => state.kellerUnlocked, action: () => showRoom('heizung') },
                 { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
             ]
         },
@@ -685,7 +706,7 @@
             </svg>`,
             text: "Eine feuchte Tropfsteinhöhle tief im Fels. Ein Durchgang ist kreuz und quer mit dicken, nagelneuen Holzbrettern vernagelt.",
             choices: [
-                { type: 'action', text: "Krieche durch die Öffnung", condition: () => state.barricadeBroken, action: () => showRoom('langer_gang') },
+                { type: 'action', text: "Krieche durch die aufgebrochene Öffnung", condition: () => state.barricadeBroken, action: () => showRoom('langer_gang') },
                 { type: 'action', text: "Zurück in den Heizungskeller", action: () => showRoom('heizung') }
             ]
         },
@@ -693,35 +714,64 @@
             title: "Der Fledermaus-Gang",
             image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
                 <rect width="64" height="36" fill="#050505" />
-                ${state.hasFlashlight ? `<polygon points="32,36 10,0 54,0" fill="#ffffcc" opacity="0.3" />` : ''}
+                ${state.gangIlluminated ? `<polygon points="32,36 10,0 54,0" fill="#ffffcc" opacity="0.3" />` : ''}
                 <path d="M 20 30 L 22 32 L 20 34 Z" fill="#444" />
                 <path d="M 40 28 L 44 29 L 42 32 Z" fill="#444" />
                 <path d="M 30 25 L 32 24 L 33 26 Z" fill="#444" />
+                ${state.wearingSlippers ? `<rect x="28" y="32" width="4" height="2" fill="#fff" rx="1" /><rect x="34" y="32" width="4" height="2" fill="#fff" rx="1" />` : ''}
             </svg>`,
-            text: "Es ist absolute Finsternis. Der Geruch nach Ammoniak beißt in der Nase. Unter deinen Füßen knirscht es widerlich - der Boden ist übersät mit Fledermauskadavern.",
+            text: state.gangIlluminated ? 
+                "Im Licht der Taschenlampe erkennst du das Grauen: Der Boden des engen Tunnels ist komplett mit knochentrockenen Fledermauskadavern bedeckt. Tausende Fledermäuse hängen schlafend an der Decke. Jedes laute Knirschen wird sie aufwecken." : 
+                "Es ist absolute Finsternis. Der Geruch nach Ammoniak beißt in der Nase. Unter deinen Füßen fühlst du etwas Unangenehmes.",
             choices: [
-                { type: 'action', text: "Gehe blind weiter ins Dunkle", action: () => {
-                    showMessage("Du stolperst über etwas Matschiges, rutschst aus und fällst mit dem Gesicht in Fledermaus-Gekröse. Panisch rennst du zurück!");
+                { type: 'action', text: "Gehe blind weiter ins Dunkle", condition: () => !state.gangIlluminated, action: () => {
+                    showMessage("Du stolperst über etwas Matschiges, rutschst aus und fällst hin. Panisch rennst du zurück ins Licht!");
                     showRoom('keller');
                 }},
-                { type: 'action', text: "Leuchte den Weg mit der Taschenlampe aus und gehe weiter", condition: () => state.hasFlashlight, action: () => showRoom('leiter_loch') },
+                { type: 'action', text: "Gehe vorsichtig durch den Tunnel", condition: () => state.gangIlluminated, action: () => {
+                    if(!state.wearingSlippers) {
+                        showMessage("KNIRSCH! Deine harten Schuhe zermalmen die Knochen am Boden. Tausende Fledermäuse erwachen und greifen an! Du fliehst schreiend zurück.");
+                        showRoom('keller');
+                    } else {
+                        showMessage("Dank der flauschigen Hotel-Slipper gleitest du wie ein Geist völlig lautlos über das Knochenfeld.");
+                        showRoom('leiter_loch');
+                    }
+                }},
                 { type: 'action', text: "Zurück in die Höhle", action: () => showRoom('keller') }
             ]
         },
         leiter_loch: {
             title: "Das Loch in der Wand",
             image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
-                <rect width="64" height="36" fill="#4a4a4a" />
-                <rect x="20" y="5" width="24" height="20" fill="#000" />
-                <rect x="25" y="10" width="2" height="26" fill="#8b5a2b" />
-                <rect x="37" y="10" width="2" height="26" fill="#8b5a2b" />
-                <rect x="25" y="15" width="14" height="2" fill="#8b5a2b" />
-                <rect x="25" y="22" width="14" height="2" fill="#8b5a2b" />
-                <rect x="25" y="29" width="14" height="2" fill="#8b5a2b" />
+                <rect width="64" height="36" fill="#2a2a2a" />
+                <rect x="20" y="5" width="24" height="31" fill="#000" />
+                <!-- Leiter -->
+                ${!state.ladderLowered ? `
+                <g transform="translate(0, -15)">
+                    <rect x="25" y="10" width="2" height="26" fill="#8b5a2b" />
+                    <rect x="37" y="10" width="2" height="26" fill="#8b5a2b" />
+                    <rect x="25" y="15" width="14" height="2" fill="#8b5a2b" />
+                    <rect x="25" y="22" width="14" height="2" fill="#8b5a2b" />
+                    <rect x="25" y="29" width="14" height="2" fill="#8b5a2b" />
+                </g>
+                <line x1="15" y1="0" x2="15" y2="15" stroke="#aaa" stroke-width="1" />
+                <rect x="12" y="15" width="6" height="6" fill="#555" />
+                ` : `
+                <g transform="translate(0, 0)">
+                    <rect x="25" y="10" width="2" height="26" fill="#8b5a2b" />
+                    <rect x="37" y="10" width="2" height="26" fill="#8b5a2b" />
+                    <rect x="25" y="15" width="14" height="2" fill="#8b5a2b" />
+                    <rect x="25" y="22" width="14" height="2" fill="#8b5a2b" />
+                    <rect x="25" y="29" width="14" height="2" fill="#8b5a2b" />
+                </g>
+                <line x1="15" y1="0" x2="15" y2="25" stroke="#aaa" stroke-width="1" />
+                <rect x="12" y="25" width="6" height="6" fill="#555" />
+                <circle cx="15" cy="28" r="3" fill="#800000" />
+                `}
             </svg>`,
-            text: "Am Ende des widerlichen Tunnels stehst du vor einer unverputzten Ziegelmauer. Jemand hat ein großes Loch hineingebrochen. Eine alte Holzleiter führt hinauf.",
+            text: "Am Ende des widerlichen Tunnels stehst du vor einer Ziegelmauer mit einem großen Loch. Eine alte Holzleiter führt hinauf in das Loch, aber sie ist an einem Seilzug befestigt und hängt unerreichbar hoch in der Luft. An dem anderen Ende des Seils baumelt ein leerer Eimer.",
             choices: [
-                { type: 'action', text: "Klettere die Leiter hoch und zwänge dich durchs Loch", action: () => showRoom('tennishalle') },
+                { type: 'action', text: "Klettere die herabgelassene Leiter hoch", condition: () => state.ladderLowered, action: () => showRoom('tennishalle') },
                 { type: 'action', text: "Zurück durch den Fledermaus-Gang", action: () => showRoom('langer_gang') }
             ]
         },
@@ -730,13 +780,18 @@
             image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
                 <rect width="64" height="36" fill="#0a0a0a" />
                 <polygon points="0,20 64,20 64,36 0,36" fill="#800000" />
-                <polygon points="30,20 34,20 40,36 24,36" fill="#fff" opacity="0.2" />
-                <rect x="30" y="12" width="6" height="8" fill="#ffd700" opacity="0.8" />
-                <rect x="30" y="10" width="6" height="2" fill="#00ff00" />
+                <rect x="25" y="8" width="14" height="12" fill="${state.evidenceDestroyed ? '#4caf50' : '#d32f2f'}" />
+                <rect x="25" y="8" width="14" height="12" fill="#111" opacity="${state.evidenceDestroyed ? '0' : '0.8'}" />
+                
+                <!-- Shredder -->
+                <rect x="45" y="14" width="8" height="6" fill="#ccc" />
+                <rect x="46" y="15" width="6" height="1" fill="#000" />
+                <circle cx="49" cy="18" r="1" fill="${state.evidenceDestroyed ? '#33ff33' : '#ff3333'}" />
+                ${!state.evidenceDestroyed ? '' : `<path d="M 46 20 L 46 25 L 48 22 L 50 25 L 52 22 Z" fill="#fff" opacity="0.5" />`}
             </svg>`,
-            text: "Deine Füße knirschen auf rotem Sand. Die riesige Halle ist dunkel. Auf der gegenüberliegenden Seite blitzt unter einer Tür gemütlicher Lichtschein hervor. Leise Volksmusik erklingt.",
+            text: "Deine Slipper knirschen auf rotem Sand. Du bist in der Tennishalle! Auf der gegenüberliegenden Seite blockiert jedoch ein modernes, schweres Gittertor den Ausgang zur Enzianhütte.\n\nNeben dem Tor steht eine bizarre Maschine: Ein Aktenvernichter mit einem roten Scannerauge. Ein Schild besagt: 'Tor-Entriegelung nur bei vollständiger Vernichtung der Beweismittel'.",
             choices: [
-                { type: 'action', text: "Öffne die Tür und trete ins Licht!", action: () => showRoom('finale') },
+                { type: 'action', text: "Öffne das entriegelte Tor und trete ins Licht!", condition: () => state.evidenceDestroyed, action: () => showRoom('finale') },
                 { type: 'action', text: "Zurück ins dunkle Loch", action: () => showRoom('leiter_loch') }
             ]
         },
@@ -751,13 +806,13 @@
                 <rect x="38" y="20" width="12" height="16" fill="#4caf50" />
                 <rect x="25" y="25" width="39" height="11" fill="#5d4037" />
             </svg>`,
-            text: "DU HAST ES GESCHAFFT!\n\nDu stehst hinter dem Tresen der rustikalen Enzianhütte. Der Wirt schaut verdutzt, greift dann aber grinsend zur Flasche Zirbenschnaps. Du hast das finstere Geheimnis der Gemeinde Reith überlebt. Prost!",
+            text: "DU HAST ES GESCHAFFT!\n\nDu stehst hinter dem Tresen der rustikalen Enzianhütte. Der Wirt schaut verdutzt, greift dann aber grinsend zur Flasche Zirbenschnaps. Du hast das finstere Geheimnis der Gemeinde Reith überlebt und alle Beweise (notgedrungen) vernichtet. Prost!",
             choices: [
                 { type: 'action', text: "Trinke einen Zirbenschnaps!", action: () => {
                     state.beerCount++;
                     showMessage(`Prost! Das war Schnaps Nummer ${state.beerCount}.`);
                     if(state.beerCount > 4) {
-                        alert("Du hast das Spiel durchgespielt (und bist betrunken). Zeit fürs Bett!");
+                        alert("Du hast das Spiel komplett durchgespielt (und bist betrunken). Zeit fürs Bett!");
                         location.reload(); 
                     }
                 }},
@@ -773,16 +828,17 @@
         invList.innerHTML = '';
         
         let items = [];
-        if (state.knowsCode) items.push({id: 'code', name: "🧠 Code: 0305"});
-        if (state.hasNaOH) items.push({id: 'naoh', name: "🧪 Natriumhydroxid"});
-        if (state.hasKey) items.push({id: 'key', name: "🔑 Messing-Schlüssel"});
-        if (state.hasCrowbar) items.push({id: 'crowbar', name: "🔧 Brecheisen"});
-        if (state.hasOil) items.push({id: 'oil', name: "🛢️ Schmieröl"});
-        if (state.hasFlashlight) items.push({id: 'flashlight', name: "🔦 Taschenlampe"});
-        if (state.hasAkte) items.push({id: 'akte', name: "📁 Akte 'Gemeinde Reith'"});
-        if (state.hasPen) items.push({id: 'pen', name: "✒️ Goldener Füller"});
-        if (state.hasSlippers) items.push({id: 'slippers', name: "🩴 Badeschlappen"});
-        if (state.hasBowlingball) items.push({id: 'bowlingball', name: "🎳 Bowlingkugel"});
+        // Items verschwinden, sobald ihr Rätsel gelöst (Status = true) ist!
+        if (state.knowsCode && !state.kellerUnlocked) items.push({id: 'code', name: "🧠 Code: 0305"});
+        if (state.hasNaOH && !state.acidNeutralized) items.push({id: 'naoh', name: "🧪 Natriumhydroxid"});
+        if (state.hasKey && !state.saunaUnlocked) items.push({id: 'key', name: "🔑 Messing-Schlüssel"});
+        if (state.hasCrowbar && !state.barricadeBroken) items.push({id: 'crowbar', name: "🔧 Brecheisen"});
+        if (state.hasOil && !state.leverOiled) items.push({id: 'oil', name: "🛢️ Schmieröl"});
+        if (state.hasFlashlight && !state.gangIlluminated) items.push({id: 'flashlight', name: "🔦 Taschenlampe"});
+        if (state.hasAkte && !state.evidenceDestroyed) items.push({id: 'akte', name: "📁 Akte 'Gemeinde Reith'"});
+        if (state.hasPen && !state.circuitBridged) items.push({id: 'pen', name: "✒️ Goldener Füller"});
+        if (state.hasSlippers && !state.wearingSlippers) items.push({id: 'slippers', name: "🩴 Badeschlappen"});
+        if (state.hasBowlingball && !state.ladderLowered) items.push({id: 'bowlingball', name: "🎳 Bowlingkugel"});
 
         if (invCount) invCount.innerText = items.length;
 
