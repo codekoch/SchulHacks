@@ -581,7 +581,7 @@
                 { type: 'examine', text: "Durchsuche den Kugelrücklauf", condition: () => !state.hasFlashlight || !state.hasBowlingball, action: () => {
                     let msg = "";
                     if(!state.hasFlashlight) { state.hasFlashlight = true; msg += "Bingo! Eine alte, funktionierende Taschenlampe. "; }
-                    if(!state.hasBowlingball) { state.hasBowlingball = true; msg += "Du steckst eine extrem schwere Bowlingkugel ein. "; }
+                    if(!state.hasBowlingball) { state.hasBowlingball = true; msg += "Du steckst außerdem eine extrem schwere Bowlingkugel ein. "; }
                     updateInventory();
                     showRoom('kegelbahn');
                     showMessage(msg.trim());
