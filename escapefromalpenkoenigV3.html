@@ -321,8 +321,8 @@
         wearingSlippers: false,
         hasBowlingball: false,
         ladderLowered: false,
-        beerCount: 0,
         schnapsCount: 0,
+        bierCount: 0,
         oldWomanAppeared: false,
         schnapsAfterWoman: 0,
         bierAfterWoman: 0
@@ -836,20 +836,20 @@
                             alert("Du hast das Spiel komplett durchgespielt (und bist sturzbetrunken). Zeit fürs Bett!");
                             location.reload(); 
                         } else {
-                            showMessage(`Prost! Die alte Frau singt weiter. (Weitere Schnäpse: ${state.schnapsAfterWoman}/4)`);
+                            showMessage(`Prost! Der Schnaps brennt. Die alte Frau singt weiter. (Weitere Schnäpse: ${state.schnapsAfterWoman}/4)`);
                             showRoom('finale');
                         }
                     } else {
                         state.schnapsCount++;
-                        if (state.schnapsCount >= 1 && state.bierCount >= 2 && !state.oldWomanAppeared) {
+                        if ((state.schnapsCount + state.bierCount) >= 3 && !state.oldWomanAppeared) {
                             state.oldWomanAppeared = true;
-                            showMessage("Eine alte Frau betritt die Hütte und steuert direkt auf euch zu!");
+                            showMessage(`Prost! (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier). Plötzlich betritt eine alte Frau die Hütte und steuert direkt auf euch zu!`);
                             showRoom('finale');
                         } else if (state.schnapsCount >= 5) {
-                            alert("Du hast zu viel Schnaps getrunken und schläfst ein. Zeit fürs Bett!");
+                            alert(`Prost! (${state.schnapsCount} Schnaps). Das war einer zu viel. Du fällst besoffen vom Hocker. Zeit fürs Bett!`);
                             location.reload();
                         } else {
-                            showMessage(`Prost! (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier)`);
+                            showMessage(`Prost! Der Schnaps brennt gut. (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier)`);
                             showRoom('finale');
                         }
                     }
@@ -861,20 +861,20 @@
                             alert("Du hast das Spiel komplett durchgespielt (und bist sturzbetrunken). Zeit fürs Bett!");
                             location.reload(); 
                         } else {
-                            showMessage(`Prost! Die alte Frau singt weiter. (Weitere Biere: ${state.bierAfterWoman}/5)`);
+                            showMessage(`Prost! Kühles Bier. Die alte Frau singt lauter. (Weitere Biere: ${state.bierAfterWoman}/5)`);
                             showRoom('finale');
                         }
                     } else {
                         state.bierCount++;
-                        if (state.schnapsCount >= 1 && state.bierCount >= 2 && !state.oldWomanAppeared) {
+                        if ((state.schnapsCount + state.bierCount) >= 3 && !state.oldWomanAppeared) {
                             state.oldWomanAppeared = true;
-                            showMessage("Eine alte Frau betritt die Hütte und steuert direkt auf euch zu!");
+                            showMessage(`Prost! (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier). Plötzlich betritt eine alte Frau die Hütte und steuert direkt auf euch zu!`);
                             showRoom('finale');
                         } else if (state.bierCount >= 5) {
-                            alert("Du hast zu viel Bier getrunken und schläfst ein. Zeit fürs Bett!");
+                            alert(`Prost! (${state.bierCount} Bier). Das war eins zu viel. Du fällst besoffen vom Hocker. Zeit fürs Bett!`);
                             location.reload();
                         } else {
-                            showMessage(`Prost! (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier)`);
+                            showMessage(`Prost! Ein herrlich kühles Bier. (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier)`);
                             showRoom('finale');
                         }
                     }
