@@ -321,7 +321,11 @@
         wearingSlippers: false,
         hasBowlingball: false,
         ladderLowered: false,
-        beerCount: 0
+        beerCount: 0,
+        schnapsCount: 0,
+        oldWomanAppeared: false,
+        schnapsAfterWoman: 0,
+        bierAfterWoman: 0
     };
 
     let currentRoom = '';
@@ -920,7 +924,8 @@
 
         const room = rooms[roomKey];
         document.getElementById('scene-title').innerText = room.title;
-        document.getElementById('story').innerText = room.text;
+        // Text auswerten, falls es sich um eine Funktion handelt (wie im Finale)
+        document.getElementById('story').innerText = typeof room.text === 'function' ? room.text() : room.text;
         
         document.getElementById('image-container').innerHTML = room.image();
         
