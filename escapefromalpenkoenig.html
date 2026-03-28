@@ -16,6 +16,8 @@
 
         * {
             box-sizing: border-box;
+            /* Verhindert Pull-to-Refresh auf Handys */
+            overscroll-behavior-y: none; 
         }
 
         body {
@@ -24,12 +26,13 @@
             font-family: 'Courier New', Courier, monospace;
             margin: 0;
             padding: 0;
-            height: 100vh;
+            /* 100dvh berücksichtigt mobile Browser-UI (Adressleisten) */
+            height: 100dvh; 
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 16px;
-            overflow: hidden; /* Verhindert Body-Scrollen, App-Feeling */
+            overflow: hidden; 
         }
 
         #game-container {
@@ -61,6 +64,7 @@
             border-bottom: 2px solid var(--border-color);
             letter-spacing: 2px;
             flex: 0 0 auto;
+            z-index: 10;
         }
 
         #screen {
@@ -73,7 +77,9 @@
         }
 
         #image-container {
-            flex: 0 0 45%;
+            flex: 0 0 auto;
+            height: 28vh; /* Feste Bildhöhe für Handys */
+            min-height: 150px;
             background: #000;
             border-bottom: 2px dashed #333;
             display: flex;
@@ -82,7 +88,6 @@
             overflow: hidden;
         }
 
-        /* Sorgt für den klobigen Retro-Pixel-Art-Look */
         #image-container svg {
             width: 100%;
             height: 100%;
@@ -94,6 +99,7 @@
             flex: 1 1 auto;
             padding: 15px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         #scene-title {
@@ -117,16 +123,17 @@
         }
 
         #lower-panel {
-            flex: 0 0 35%;
+            flex: 0 0 38vh; /* Fester Bereich unten für Buttons */
+            min-height: 250px;
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
         }
 
         #choices-container {
-            flex: 2;
+            flex: 1 1 auto;
             padding: 10px;
-            border-right: 2px solid var(--border-color);
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .choice-btn {
@@ -142,6 +149,7 @@
             text-align: left;
             cursor: pointer;
             transition: all 0.2s;
+            border-radius: 4px;
         }
 
         .choice-btn:hover, .choice-btn:active {
@@ -159,61 +167,106 @@
             color: #000;
         }
 
-        #inventory-container {
-            flex: 1;
-            padding: 10px;
-            background-color: var(--inv-bg);
-            overflow-y: auto;
+        /* --- MODAL INVENTAR --- */
+        #inventory-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
         }
 
-        #inventory-container h3 {
-            margin-top: 0;
+        #inventory-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            border: 2px solid var(--text-highlight);
+            border-radius: 8px;
+            padding: 20px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);
+            color: var(--text-main);
+        }
+
+        .modal-content h3 {
             color: var(--text-highlight);
             text-align: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-            font-size: 1rem;
+            margin-top: 0;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 10px;
         }
 
         #inventory-list {
             list-style-type: none;
             padding: 0;
-            margin: 0;
-            font-size: 0.9rem;
+            margin: 0 0 20px 0;
+            font-size: 1rem;
+            max-height: 50vh;
+            overflow-y: auto;
         }
 
         #inventory-list li {
-            padding: 6px 0;
+            padding: 12px 0;
             border-bottom: 1px dashed #333;
             display: flex;
             align-items: center;
+            justify-content: space-between;
         }
 
-        /* Mobile Responsive Anpassungen */
+        .use-btn {
+            background: transparent;
+            color: var(--text-action);
+            border: 1px solid var(--text-action);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-left: 10px;
+            transition: all 0.2s;
+        }
+
+        .use-btn:hover, .use-btn:active {
+            background: var(--text-action);
+            color: #000;
+        }
+
+        /* TOGGLE BUTTON ganz unten fixiert */
+        #inv-toggle-btn {
+            border-radius: 0;
+            border: none;
+            border-top: 2px solid var(--text-highlight);
+            color: var(--text-highlight);
+            text-align: center;
+            font-weight: bold;
+            background-color: #1a1a1a;
+            padding: 15px;
+            margin: 0;
+            flex: 0 0 auto;
+        }
+
+        #inv-toggle-btn:hover, #inv-toggle-btn:active {
+            background-color: var(--text-highlight);
+            color: #000;
+        }
+
+        /* --- MOBILE RESPONSIVE LAYOUT --- */
         @media (max-width: 768px) {
-            #lower-panel {
-                flex-direction: column;
-                flex: 0 0 45%;
-            }
-            #choices-container {
-                flex: 1 1 60%;
-                border-right: none;
-                border-bottom: 2px solid var(--border-color);
-            }
-            #inventory-container {
-                flex: 1 1 40%;
-            }
-            #image-container {
-                flex: 0 0 35%;
-            }
             header { font-size: 1rem; padding: 8px; }
-            .choice-btn { padding: 10px; font-size: 0.95rem; }
+            #lower-panel { flex: 0 0 35vh; }
+            .choice-btn { padding: 14px 10px; font-size: 0.95rem; }
+            .use-btn { padding: 8px 12px; font-size: 0.9rem; }
         }
 
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar { width: 8px; }
+        /* Scrollbar Styling für Webkit-Browser */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #111; }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-main); }
 
     </style>
@@ -236,14 +289,25 @@
     
     <div id="lower-panel">
         <div id="choices-container">
-            <!-- Buttons werden hier generiert -->
+            <div id="action-buttons">
+                <!-- Aktions-Buttons werden hier generiert -->
+            </div>
         </div>
-        <div id="inventory-container">
-            <h3>🎒 Inventar</h3>
-            <ul id="inventory-list">
-                <!-- Inventar wird hier generiert -->
-            </ul>
-        </div>
+        <!-- Inventar Button fixiert am unteren Rand -->
+        <button class="choice-btn" id="inv-toggle-btn" onclick="toggleInventory()">
+            🎒 Inventar öffnen (<span id="inv-count">0</span>)
+        </button>
+    </div>
+</div>
+
+<!-- Modal für das Inventar -->
+<div id="inventory-modal">
+    <div class="modal-content">
+        <h3>🎒 Dein Inventar</h3>
+        <ul id="inventory-list">
+            <!-- Inventar wird hier generiert -->
+        </ul>
+        <button class="choice-btn" style="border-color: #ff3333; color: #ff3333; text-align: center; margin-top: 10px;" onclick="toggleInventory()">❌ Schließen</button>
     </div>
 </div>
 
@@ -261,16 +325,72 @@
         beerCount: 0
     };
 
+    let currentRoom = ''; // Speichert den aktuellen Raum global für die Item-Benutzung
+
     // --- NACHRICHTEN SYSTEM ---
+    function toggleInventory() {
+        const modal = document.getElementById('inventory-modal');
+        modal.classList.toggle('active');
+    }
+
     function showMessage(msg) {
         const msgBox = document.getElementById('message-box');
         msgBox.innerText = `>> ${msg}`;
         msgBox.style.opacity = 0;
         setTimeout(() => msgBox.style.opacity = 1, 50);
         
-        // Scroll automatisch runter zum Text
         const textContainer = document.getElementById('text-container');
         setTimeout(() => textContainer.scrollTop = textContainer.scrollHeight, 100);
+    }
+
+    // --- ITEM BENUTZUNG ---
+    function useItem(itemId) {
+        toggleInventory(); // Modal schließen
+        let msg = "Du kannst das hier nicht sinnvoll einsetzen.";
+
+        if (itemId === 'naoh') {
+            if (currentRoom === 'schwimmbad' && !state.acidNeutralized) {
+                state.acidNeutralized = true;
+                msg = "Es zischt, blubbert und dampft! Eine wunderschöne Säure-Base-Reaktion. Die Lösung ist nun pH-neutral.";
+            } else if (currentRoom === 'bar') {
+                msg = "Den Barkeeper damit zu bedrohen, ist keine pädagogisch wertvolle Idee.";
+            }
+        } 
+        else if (itemId === 'key') {
+            if (currentRoom === 'sauna_tuer' && !state.saunaUnlocked) {
+                state.saunaUnlocked = true;
+                msg = "Der Schlüssel passt perfekt. Mit einem lauten *Klack* öffnet sich das Schloss.";
+                showRoom('sauna_innen');
+                showMessage(msg);
+                return; // Early return, da der Raum gewechselt wird
+            } else if (currentRoom === 'fitness') {
+                msg = "Das ist ein elektronisches Schloss. Ein analoger Messing-Schlüssel hilft hier nicht.";
+            }
+        } 
+        else if (itemId === 'crowbar') {
+            if (currentRoom === 'keller' && !state.barricadeBroken) {
+                state.barricadeBroken = true;
+                msg = "*KRRAAAACK!* Mit Hebelkraft reißst du die Bretter problemlos von der Wand. Der Weg ist frei!";
+            } else if (currentRoom === 'sauna_tuer' && !state.saunaUnlocked) {
+                msg = "Das Vorhängeschloss ist zu massiv, und du würdest nur die schöne Holztür ruinieren. Du brauchst den passenden Schlüssel.";
+            } else if (currentRoom === 'fitness' && !state.kellerUnlocked) {
+                msg = "Die Stahltür ist viel zu schwer für das Brecheisen. Keine Chance.";
+            } else if (currentRoom === 'schwimmbad' && !state.acidNeutralized) {
+                msg = "Mit dem Brecheisen nach dem Schlüssel zu fischen klappt nicht. Es ist zu rutschig und zu kurz.";
+            }
+        } 
+        else if (itemId === 'code') {
+            if (currentRoom === 'fitness' && !state.kellerUnlocked) {
+                state.kellerUnlocked = true;
+                msg = "*Biep Biep Biep - Klick!* Das grüne Licht leuchtet auf. Die Stahltür schwingt auf.";
+            } else if (currentRoom === 'bar') {
+                msg = "Der Barkeeper schaut dich verwirrt an, als du ihm Nullstellen nennst. Er will lieber Feierabend machen.";
+            }
+        }
+
+        // Raum neu laden um eventuelle visuelle Änderungen (z.B. Pfütze) zu aktualisieren
+        showRoom(currentRoom); 
+        showMessage(msg);
     }
 
     // --- RÄUME, LOGIK & PIXEL-ART ---
@@ -355,11 +475,6 @@
             choices: [
                 { type: 'examine', text: "Untersuche die Pfütze", action: () => showMessage(state.acidNeutralized ? "Die Pfütze ist nun harmlos und schimmert blau." : "Es riecht nach Schwefelwasserstoff. Jemand hat extrem sauren Entkalker (pH 1) verschüttet!") },
                 { type: 'action', text: "Greife mit der Hand nach dem Schlüssel", condition: () => !state.acidNeutralized, action: () => showMessage("Autsch! Das brennt höllisch! Du musst die Säure irgendwie neutralisieren.") },
-                { type: 'action', text: "Schütte das NaOH aus dem Inventar in die Pfütze", condition: () => state.hasNaOH && !state.acidNeutralized, action: () => {
-                    state.acidNeutralized = true;
-                    showMessage("Es zischt, blubbert und dampft! Eine wunderschöne Säure-Base-Reaktion. Die Lösung ist nun pH-neutral.");
-                    showRoom('schwimmbad');
-                }},
                 { type: 'action', text: "Nimm den Schlüssel", condition: () => state.acidNeutralized && !state.hasKey, action: () => {
                     state.hasKey = true;
                     updateInventory();
@@ -381,11 +496,6 @@
             </svg>`,
             text: "Die Tür aus massivem Holz ist fest verschlossen. Ein altes, verrostetes Vorhängeschloss hängt an der Verriegelung.",
             choices: [
-                { type: 'action', text: "Benutze den messingfarbenen Schlüssel", condition: () => state.hasKey, action: () => {
-                    state.saunaUnlocked = true;
-                    showMessage("Der Schlüssel passt perfekt. Mit einem lauten *Klack* öffnet sich das Schloss.");
-                    showRoom('sauna_innen');
-                }},
                 { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
             ]
         },
@@ -399,13 +509,13 @@
                 <rect x="47" y="20" width="11" height="4" fill="#ff4500" />
                 ${!state.hasCrowbar ? '<rect x="42" y="33" width="8" height="2" fill="#ff0000" />' : ''}
             </svg>`,
-            text: "Es ist eiskalt hier drinnen. Der Geruch von altem Fichtennadel-Aufguss hängt in der Luft. Die Bänke sind verstaubt. Ganz hinten unter dem Steinofen klemmt etwas Rotes.",
+            text: "Es ist eiskalt hier drinnen. Der Geruch von altem Fichtennadel-Aufguss hängt in der Luft. Ganz hinten unter dem Steinofen klemmt etwas Rotes.",
             choices: [
-                { type: 'examine', text: "Untersuche das rote Ding unter dem Ofen", condition: () => !state.hasCrowbar, action: () => showMessage("Es ist ein massives, rotes Brecheisen aus Stahl. Typisches Sauna-Zubehör.") },
+                { type: 'examine', text: "Untersuche das Rote unter dem Ofen", condition: () => !state.hasCrowbar, action: () => showMessage("Es ist ein massives, rotes Brecheisen aus Stahl. Typisches Sauna-Zubehör.") },
                 { type: 'action', text: "Nimm das Brecheisen", condition: () => !state.hasCrowbar, action: () => {
                     state.hasCrowbar = true;
                     updateInventory();
-                    showMessage("Du zerrst das Brecheisen hervor. Schwer und gefährlich. Ein hervorragendes pädagogisches Werkzeug.");
+                    showMessage("Du zerrst das Brecheisen hervor. Ein hervorragendes pädagogisches Werkzeug.");
                     showRoom('sauna_innen');
                 }},
                 { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
@@ -425,12 +535,7 @@
             text: "Rostige Hanteln und ein defektes Laufband zeugen von besseren Zeiten. An der hinteren Wand befindet sich eine schwere Stahltür. Neben der Tür ist ein elektronisches Tastenfeld angebracht.",
             choices: [
                 { type: 'examine', text: "Untersuche die Stahltür", action: () => showMessage("Massiver Stahl. Ohne den 4-stelligen PIN-Code bewegt die sich keinen Millimeter.") },
-                { type: 'action', text: "Gib einen zufälligen Code ein (z.B. 1234)", condition: () => !state.kellerUnlocked, action: () => showMessage("*Mööööp!* Rotes Licht. Das war falsch.") },
-                { type: 'action', text: "Gib den Code '0305' (Nullstellen) ein", condition: () => state.knowsCode && !state.kellerUnlocked, action: () => {
-                    state.kellerUnlocked = true;
-                    showMessage("*Biep Biep Biep - Klick!* Das grüne Licht leuchtet auf. Die Stahltür schwingt auf.");
-                    showRoom('fitness');
-                }},
+                { type: 'action', text: "Gib Code 1234 ein", condition: () => !state.kellerUnlocked, action: () => showMessage("*Mööööp!* Rotes Licht. Das war falsch.") },
                 { type: 'action', text: "Betrete den dunklen Keller", condition: () => state.kellerUnlocked, action: () => showRoom('keller') },
                 { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
             ]
@@ -453,11 +558,6 @@
             choices: [
                 { type: 'examine', text: "Untersuche die vernagelte Wand", action: () => showMessage("Die Bretter sind alt, aber mit dicken Zimmermannsnägeln befestigt. Mit bloßen Händen kommst du hier nicht weiter.") },
                 { type: 'action', text: "Reiße die Bretter mit bloßen Händen ab", condition: () => !state.barricadeBroken, action: () => showMessage("Du ziehst dir einen riesigen Splitter ein. Du fluchst laut. Das klappt so nicht.") },
-                { type: 'action', text: "Benutze das Brecheisen bei den Brettern", condition: () => state.hasCrowbar && !state.barricadeBroken, action: () => {
-                    state.barricadeBroken = true;
-                    showMessage("*KRRAAAACK!* Mit Hebelkraft reißst du die Bretter problemlos von der Wand. Der Weg ist frei!");
-                    showRoom('keller');
-                }},
                 { type: 'action', text: "Zwänge dich durch die Öffnung in die Tennishalle", condition: () => state.barricadeBroken, action: () => showRoom('tennishalle') },
                 { type: 'action', text: "Zurück zum Fitnessraum", action: () => showRoom('fitness') }
             ]
@@ -512,54 +612,61 @@
     // --- UI UPDATES ---
     function updateInventory() {
         const invList = document.getElementById('inventory-list');
+        const invCount = document.getElementById('inv-count');
         invList.innerHTML = '';
         
         let items = [];
-        if (state.knowsCode) items.push("🧠 Code: 0305");
-        if (state.hasNaOH) items.push("🧪 Natriumhydroxid (NaOH)");
-        if (state.hasKey) items.push("🔑 Messing-Schlüssel");
-        if (state.hasCrowbar) items.push("🔧 Rotes Brecheisen");
+        if (state.knowsCode) items.push({id: 'code', name: "🧠 Code: 0305"});
+        if (state.hasNaOH) items.push({id: 'naoh', name: "🧪 Natriumhydroxid"});
+        if (state.hasKey) items.push({id: 'key', name: "🔑 Messing-Schlüssel"});
+        if (state.hasCrowbar) items.push({id: 'crowbar', name: "🔧 Brecheisen"});
+
+        if (invCount) {
+            invCount.innerText = items.length;
+        }
 
         if (items.length === 0) {
-            invList.innerHTML = "<li style='color: #666;'><i>Leere Taschen</i></li>";
+            invList.innerHTML = "<li style='color: #666; border:none; padding-left:0;'><i>Leere Taschen</i></li>";
         } else {
             items.forEach(item => {
                 const li = document.createElement('li');
-                li.innerText = item;
+                li.innerHTML = `<span>${item.name}</span> <button class="use-btn" onclick="useItem('${item.id}')">Benutzen</button>`;
                 invList.appendChild(li);
             });
         }
     }
 
     function showRoom(roomKey) {
+        currentRoom = roomKey; // Den aktuellen Raum global speichern!
         document.getElementById('message-box').innerText = "";
 
         const room = rooms[roomKey];
         document.getElementById('scene-title').innerText = room.title;
         document.getElementById('story').innerText = room.text;
         
-        // Rendere die dynamische SVG Pixel Art
         document.getElementById('image-container').innerHTML = room.image();
         
-        const choicesContainer = document.getElementById('choices-container');
-        choicesContainer.innerHTML = ''; 
+        const actionButtons = document.getElementById('action-buttons');
+        if (actionButtons) {
+            actionButtons.innerHTML = ''; 
 
-        room.choices.forEach(choice => {
-            if (!choice.condition || choice.condition()) {
-                const btn = document.createElement('button');
-                btn.className = `choice-btn ${choice.type}`;
-                
-                let prefix = choice.type === 'examine' ? '👀 Untersuche: ' : '▶ Gehe/Mache: ';
-                if(choice.text.includes("Zurück")) prefix = '🔙 ';
-                
-                btn.innerText = prefix + choice.text;
-                btn.onclick = choice.action;
-                choicesContainer.appendChild(btn);
-            }
-        });
+            room.choices.forEach(choice => {
+                if (!choice.condition || choice.condition()) {
+                    const btn = document.createElement('button');
+                    btn.className = `choice-btn ${choice.type}`;
+                    
+                    let prefix = choice.type === 'examine' ? '👀 Untersuche: ' : '▶ Gehe/Mache: ';
+                    if(choice.text.includes("Zurück")) prefix = '🔙 ';
+                    
+                    btn.innerText = prefix + choice.text;
+                    btn.onclick = choice.action;
+                    actionButtons.appendChild(btn);
+                }
+            });
+        }
 
-        // Automatisch Text scrollen
         document.getElementById('text-container').scrollTop = 0;
+        document.getElementById('choices-container').scrollTop = 0;
     }
 
     // --- SPIEL STARTEN ---
