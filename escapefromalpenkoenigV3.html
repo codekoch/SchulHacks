@@ -362,7 +362,8 @@
         else if (itemId === 'key') {
             if (currentRoom === 'sauna_tuer' && !state.saunaUnlocked) {
                 state.saunaUnlocked = true;
-                msg = "Der rostige Schlüssel knirscht, aber das Schloss springt auf!";
+                currentRoom = 'bar'; // Automatische Flucht zurück zur Bar!
+                msg = "Der rostige Schlüssel knirscht, und das Schloss springt auf! Plötzlich ertönt ein lautes, unheimliches Kratzen aus den Wänden. Völlig aufgeschreckt fliehst du zurück zur Bar und versuchst, dich absolut unauffällig zu verhalten.";
             } else if (currentRoom === 'sauna_tuer' && state.saunaUnlocked) {
                 msg = "Das Schloss ist bereits offen, du brauchst den Schlüssel hier nicht mehr.";
             } else {
@@ -783,7 +784,7 @@
                 <circle cx="15" cy="28" r="3" fill="#800000" />
                 `}
             </svg>`,
-            text: "Am Ende des widerlichen Tunnels stehst du vor einer Ziegelmauer mit einem großen Loch. Eine alte Holzleiter führt hinauf in das Loch, aber sie ist an einem Seilzug befestigt und hängt unerreichbar hoch in der Luft. An dem anderen Ende des Seils baumelt ein leerer Eimer.",
+            text: "Am Ende des widerlichen Tunnels stehst vor einer Ziegelmauer mit einem großen Loch. Eine alte Holzleiter führt hinauf in das Loch, aber sie ist an einem Seilzug befestigt und hängt unerreichbar hoch in der Luft. An dem anderen Ende des Seils baumelt ein leerer Eimer.",
             choices: [
                 { type: 'action', text: "Klettere die herabgelassene Leiter hoch", condition: () => state.ladderLowered, action: () => showRoom('tennishalle') },
                 { type: 'action', text: "Zurück durch den Fledermaus-Gang", action: () => showRoom('langer_gang') }
