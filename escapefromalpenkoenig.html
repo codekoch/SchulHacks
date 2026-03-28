@@ -465,7 +465,7 @@
                 <rect x="26" y="23" width="12" height="13" fill="#555" />
                 <rect x="0" y="28" width="64" height="8" fill="#4a3020" />
             </svg>`,
-            text: "Du stehst mit deiner Lehrergruppe an der Bar des 'Hotel Alpenkönig' in Seefeld. Die Konferenz war furchtbar, aber ihr wollt eigentlich nur noch in die Enzianhütte auf ein Bier.\n\nEin massiver Schneesturm blockiert den Haupteingang. Der mürrische Barkeeper poliert apathisch Gläser.",
+            text: "Du stehst mit deiner Lehrergruppe an der Bar des 'Hotel Alpenkönig' in Seefeld. Der Skitag war sehr anstrengend, viele sind schon auf ihrem Zimmer, aber ihr wollt eigentlich nur noch in die Enzianhütte auf ein Bier.\n\nEin massiver Schneesturm blockiert den Haupteingang. Der mürrische Barkeeper poliert apathisch Gläser.",
             choices: [
                 { type: 'examine', text: "Sprich mit dem Barkeeper", action: () => {
                     showRoom('bar');
@@ -840,7 +840,7 @@
             </svg>`,
             text: () => {
                 if (state.oldWomanAppeared) {
-                    return "DU HAST ES GESCHAFFT!\n\nDu stehst in der rustikalen Enzianhütte. Plötzlich hat sich eine rüstige alte Frau zu euch an den Tresen gesellt. Sie behauptet lautstark, eine ehemalige Skirennläuferin zu sein, und schmettert ohrenbetäubende Tiroler Lieder. Die Konferenz ist definitiv beendet!";
+                    return "DU HAST ES GESCHAFFT!\n\nDu stehst in der rustikalen Enzianhütte. Plötzlich hat sich eine rüstige alte Frau zu euch an den Tresen gesellt. Sie behauptet lautstark, eine ehemalige Skirennläuferin zu sein, und schmettert ohrenbetäubende Tiroler Lieder. Langsam wird es anstrengend...Manche von euch sind allerdings mehr im Fokus als andere.";
                 } else {
                     return "DU HAST ES GESCHAFFT!\n\nDu stehst hinter dem Tresen der rustikalen Enzianhütte. Der Wirt schaut verdutzt, greift dann aber grinsend zur Flasche Zirbenschnaps und zapft Bier. Du hast das finstere Geheimnis der Gemeinde Reith überlebt und alle Beweise (notgedrungen) vernichtet. Das Feiern kann beginnen!";
                 }
