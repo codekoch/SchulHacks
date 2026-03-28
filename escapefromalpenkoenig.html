@@ -118,6 +118,7 @@
             margin-top: 15px;
             min-height: 1.5em;
             font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
 
         #lower-panel {
@@ -444,6 +445,7 @@
         }
 
         updateInventory();
+        // WICHTIG: Immer erst showRoom ausführen, dann showMessage, damit die Meldung nicht gelöscht wird!
         showRoom(currentRoom); 
         showMessage(msg);
     }
@@ -465,7 +467,10 @@
             </svg>`,
             text: "Du stehst mit deiner Lehrergruppe an der Bar des 'Hotel Alpenkönig' in Seefeld. Die Konferenz war furchtbar, aber ihr wollt eigentlich nur noch in die Enzianhütte auf ein Bier.\n\nEin massiver Schneesturm blockiert den Haupteingang. Der mürrische Barkeeper poliert apathisch Gläser.",
             choices: [
-                { type: 'examine', text: "Sprich mit dem Barkeeper", action: () => showMessage("Barkeeper: 'Der alte Hausmeister hat tief im Keller einen Durchgang zur Tennishalle gebaut. Aber passen Sie auf... da unten gehen seltsame Dinge vor sich.'") },
+                { type: 'examine', text: "Sprich mit dem Barkeeper", action: () => {
+                    showRoom('bar');
+                    showMessage("Barkeeper: 'Der alte Hausmeister hat tief im Keller einen Durchgang zur Tennishalle gebaut. Aber passen Sie auf... da unten gehen seltsame Dinge vor sich.'");
+                }},
                 { type: 'examine', text: "Untersuche den klebrigen Bierdeckel", action: () => showRoom('bierdeckel') },
                 { type: 'action', text: "Gehe in den düsteren Flur", action: () => showRoom('flur') }
             ]
@@ -484,8 +489,8 @@
                 { type: 'action', text: "Die mathematische Formel ins Gehirn brennen", condition: () => !state.knowsCode, action: () => {
                     state.knowsCode = true;
                     updateInventory();
-                    showMessage("x1=3 und x2=5. Der Code ist 0305! Eingeloggt.");
                     showRoom('bar');
+                    showMessage("x1=3 und x2=5. Der Code ist 0305! Eingeloggt.");
                 }},
                 { type: 'action', text: "Zurück zur Bar", action: () => showRoom('bar') }
             ]
@@ -506,8 +511,8 @@
                 { type: 'examine', text: "Untersuche den Putzwagen", condition: () => !state.hasNaOH, action: () => {
                     state.hasNaOH = true;
                     updateInventory();
-                    showMessage("Du findest eine stark konzentrierte Dose Natriumhydroxid (NaOH). Eingepackt!");
                     showRoom('flur');
+                    showMessage("Du findest eine stark konzentrierte Dose Natriumhydroxid (NaOH). Eingepackt!");
                 }},
                 { type: 'action', text: "Gehe zur Tür 'Schwimmbad'", action: () => showRoom('schwimmbad') },
                 { type: 'action', text: "Gehe zur Tür 'Sauna'", action: () => state.saunaUnlocked ? showRoom('sauna_innen') : showRoom('sauna_tuer') },
@@ -545,16 +550,18 @@
             text: "Die teuerste Suite des Hauses. Vergoldete Wasserhähne und Samtvorhänge. Auf dem massiven Schreibtisch liegen Dokumente. Das Hotelmanagement hat hier wohl überstürzt gepackt.",
             choices: [
                 { type: 'examine', text: "Durchsuche den Schreibtisch", condition: () => !state.hasAkte || !state.hasPen, action: () => {
-                    if(!state.hasAkte) { state.hasAkte = true; showMessage("Du findest eine dicke Akte mit der Aufschrift 'Amtshaftungsklage Gemeinde Reith bei Seefeld'."); }
-                    if(!state.hasPen) { state.hasPen = true; showMessage("Außerdem steckst du einen goldenen Füller ein."); }
+                    let msg = "";
+                    if(!state.hasAkte) { state.hasAkte = true; msg += "Du findest eine dicke Akte mit der Aufschrift 'Amtshaftungsklage Gemeinde Reith'. "; }
+                    if(!state.hasPen) { state.hasPen = true; msg += "Außerdem steckst du einen goldenen Füller ein."; }
                     updateInventory();
                     showRoom('suite');
+                    showMessage(msg.trim());
                 }},
                 { type: 'examine', text: "Untersuche das Badezimmer", condition: () => !state.hasSlippers, action: () => {
                     state.hasSlippers = true;
                     updateInventory();
-                    showMessage("Du nimmst ein Paar weiße Badeschlappen mit. Sehr flauschig.");
                     showRoom('suite');
+                    showMessage("Du nimmst ein Paar weiße Badeschlappen mit. Sehr flauschig.");
                 }},
                 { type: 'action', text: "Zurück ins Treppenhaus", action: () => showRoom('treppenhaus') }
             ]
@@ -572,10 +579,12 @@
             text: "Du stehst in einer staubigen, stillgelegten Kegelbahn im Untergeschoss. Die hölzernen Bahnen sind verzogen. Am Kugelrücklauf liegt allerlei Gerümpel.",
             choices: [
                 { type: 'examine', text: "Durchsuche den Kugelrücklauf", condition: () => !state.hasFlashlight || !state.hasBowlingball, action: () => {
-                    if(!state.hasFlashlight) { state.hasFlashlight = true; showMessage("Bingo! Eine alte, aber noch funktionierende Taschenlampe."); }
-                    if(!state.hasBowlingball) { state.hasBowlingball = true; showMessage("Du steckst eine extrem schwere, rote Bowlingkugel ein. Deine Bandscheiben hassen dich."); }
+                    let msg = "";
+                    if(!state.hasFlashlight) { state.hasFlashlight = true; msg += "Bingo! Eine alte, funktionierende Taschenlampe. "; }
+                    if(!state.hasBowlingball) { state.hasBowlingball = true; msg += "Du steckst eine extrem schwere Bowlingkugel ein. "; }
                     updateInventory();
                     showRoom('kegelbahn');
+                    showMessage(msg.trim());
                 }},
                 { type: 'action', text: "Zurück ins Treppenhaus", action: () => showRoom('treppenhaus') }
             ]
@@ -592,6 +601,7 @@
             text: "Ein typischer, trister Tagungsraum. Flipcharts und ein langes Whiteboard an der Wand. Dir fällt auf, dass ein kalter Luftzug hinter dem Whiteboard hervorweht.",
             choices: [
                 { type: 'examine', text: "Untersuche das Whiteboard", condition: () => !state.circuitBridged, action: () => {
+                    showRoom('konferenz');
                     showMessage("Das Board ist elektronisch verriegelt. Neben der Schiene ist ein Schaltkasten offen. Zwei Kabelenden hängen lose heraus, der Stromkreis ist unterbrochen.");
                 }},
                 { type: 'action', text: "Gehe in das verborgene Hinterzimmer", condition: () => state.circuitBridged, action: () => showRoom('hinterzimmer') },
@@ -613,8 +623,8 @@
                 { type: 'examine', text: "Untersuche das rostige Regal in der Ecke", condition: () => !state.hasOil, action: () => {
                     state.hasOil = true;
                     updateInventory();
-                    showMessage("Du findest eine alte Kanne mit trübem Schmieröl.");
                     showRoom('hinterzimmer');
+                    showMessage("Du findest eine alte Kanne mit trübem Schmieröl.");
                 }},
                 { type: 'action', text: "Zurück in den Konferenzraum (Flucht!)", action: () => showRoom('konferenz') }
             ]
@@ -630,12 +640,15 @@
             </svg>`,
             text: "Die blauen Kacheln sind dreckig. Am tiefsten Punkt des leeren Beckens hat sich eine trübe, übelriechende Pfütze (pH 1 Entkalker) gebildet. Darin glänzt ein messingfarbener Schlüssel.",
             choices: [
-                { type: 'action', text: "Greife mit der Hand nach dem Schlüssel", condition: () => !state.acidNeutralized, action: () => showMessage("Autsch! Das brennt höllisch! Die Säure muss erst neutralisiert werden.") },
+                { type: 'action', text: "Greife mit der Hand nach dem Schlüssel", condition: () => !state.acidNeutralized, action: () => {
+                    showRoom('schwimmbad');
+                    showMessage("Autsch! Das brennt höllisch! Die Säure muss erst neutralisiert werden.");
+                }},
                 { type: 'action', text: "Nimm den Schlüssel", condition: () => state.acidNeutralized && !state.hasKey, action: () => {
                     state.hasKey = true;
                     updateInventory();
-                    showMessage("Du hast den alten Saunaschlüssel aus dem neutralisierten Wasser gefischt.");
                     showRoom('schwimmbad');
+                    showMessage("Du hast den alten Saunaschlüssel aus dem neutralisierten Wasser gefischt.");
                 }},
                 { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
             ]
@@ -665,8 +678,8 @@
                 { type: 'action', text: "Nimm das Brecheisen", condition: () => !state.hasCrowbar, action: () => {
                     state.hasCrowbar = true;
                     updateInventory();
-                    showMessage("Du zerrst ein massives rotes Brecheisen hervor. Sehr nützlich.");
                     showRoom('sauna_innen');
+                    showMessage("Du zerrst ein massives rotes Brecheisen hervor. Sehr nützlich.");
                 }},
                 { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
             ]
@@ -698,11 +711,14 @@
             </svg>`,
             text: "Es ist unfassbar heiß hier. Riesige Kessel brummen. Mitten im Raum steht ein antiker Verhörstuhl mit dicken Lederriemen. Die Gemeinde Reith hat hier offenbar 'Sonderbefragungen' durchgeführt.\n\nAn der Wand ist eine gewaltige Eisentür, daneben ein völlig verrosteter Wandhebel.",
             choices: [
-                { type: 'action', text: "Zieh den Hebel mit roher Gewalt", condition: () => !state.leverOiled && !state.doorToKellerOpen, action: () => showMessage("Er bewegt sich keinen Millimeter. Das Gelenk ist komplett festgerostet.") },
+                { type: 'action', text: "Zieh den Hebel mit roher Gewalt", condition: () => !state.leverOiled && !state.doorToKellerOpen, action: () => {
+                    showRoom('heizung');
+                    showMessage("Er bewegt sich keinen Millimeter. Das Gelenk ist komplett festgerostet.");
+                }},
                 { type: 'action', text: "Betätige den geölten Hebel", condition: () => state.leverOiled && !state.doorToKellerOpen, action: () => {
                     state.doorToKellerOpen = true;
-                    showMessage("*Quiiietsch... RUMMS!* Die schwere Eisentür gleitet beiseite.");
                     showRoom('heizung');
+                    showMessage("*Quiiietsch... RUMMS!* Die schwere Eisentür gleitet beiseite.");
                 }},
                 { type: 'action', text: "Gehe durch die Eisentür in die Tiefe", condition: () => state.doorToKellerOpen, action: () => showRoom('keller') },
                 { type: 'action', text: "Klettere die Leiter hoch zum Fitnessraum", action: () => showRoom('fitness') }
@@ -740,16 +756,16 @@
                 "Es ist absolute Finsternis. Der Geruch nach Ammoniak beißt in der Nase. Unter deinen Füßen fühlst du etwas Unangenehmes.",
             choices: [
                 { type: 'action', text: "Gehe blind weiter ins Dunkle", condition: () => !state.gangIlluminated, action: () => {
-                    showMessage("Du stolperst über etwas Matschiges, rutschst aus und fällst hin. Panisch rennst du zurück ins Licht!");
                     showRoom('keller');
+                    showMessage("Du stolperst über etwas Matschiges, rutschst aus und fällst hin. Panisch rennst du zurück ins Licht!");
                 }},
                 { type: 'action', text: "Gehe vorsichtig durch den Tunnel", condition: () => state.gangIlluminated, action: () => {
                     if(!state.wearingSlippers) {
-                        showMessage("KNIRSCH! Deine harten Schuhe zermalmen die Knochen am Boden. Tausende Fledermäuse erwachen und greifen an! Du fliehst schreiend zurück.");
                         showRoom('keller');
+                        showMessage("KNIRSCH! Deine harten Schuhe zermalmen die Knochen am Boden. Tausende Fledermäuse erwachen und greifen an! Du fliehst schreiend zurück.");
                     } else {
-                        showMessage("Dank der flauschigen Hotel-Slipper gleitest du wie ein Geist völlig lautlos über das Knochenfeld.");
                         showRoom('leiter_loch');
+                        showMessage("Dank der flauschigen Hotel-Slipper gleitest du wie ein Geist völlig lautlos über das Knochenfeld.");
                     }
                 }},
                 { type: 'action', text: "Zurück in die Höhle", action: () => showRoom('keller') }
@@ -826,57 +842,61 @@
                 if (state.oldWomanAppeared) {
                     return "DU HAST ES GESCHAFFT!\n\nDu stehst in der rustikalen Enzianhütte. Plötzlich hat sich eine rüstige alte Frau zu euch an den Tresen gesellt. Sie behauptet lautstark, eine ehemalige Skirennläuferin zu sein, und schmettert ohrenbetäubende Tiroler Lieder. Die Konferenz ist definitiv beendet!";
                 } else {
-                    return "DU HAST ES GESCHAFFT!\n\nDu stehst hinter dem Tresen der rustikalen Enzianhütte. Der Wirt schaut verdutzt, greift dann aber grinsend zur Flasche Zirbenschnaps und zapft Bier. Du hast das finstere Geheimnis der Gemeinde Reith überlebt und alle Beweise (notgedrungen) vernichtet. Prost!";
+                    return "DU HAST ES GESCHAFFT!\n\nDu stehst hinter dem Tresen der rustikalen Enzianhütte. Der Wirt schaut verdutzt, greift dann aber grinsend zur Flasche Zirbenschnaps und zapft Bier. Du hast das finstere Geheimnis der Gemeinde Reith überlebt und alle Beweise (notgedrungen) vernichtet. Das Feiern kann beginnen!";
                 }
             },
             choices: [
                 { type: 'action', text: "Trinke einen Zirbenschnaps!", action: () => {
                     if (state.oldWomanAppeared) {
                         state.schnapsAfterWoman++;
+                        let prostStr = "Prost! ".repeat(state.schnapsCount + state.bierCount + state.schnapsAfterWoman + state.bierAfterWoman).trim();
                         if (state.schnapsAfterWoman >= 4) {
-                            alert("Du hast das Spiel komplett durchgespielt (und bist sturzbetrunken). Zeit fürs Bett!");
+                            alert(`${prostStr} Du hast das Spiel komplett durchgespielt (und bist sturzbetrunken). Zeit fürs Bett!`);
                             location.reload(); 
                         } else {
-                            showMessage(`Prost! Der Schnaps brennt. Die alte Frau singt weiter. (Weitere Schnäpse: ${state.schnapsAfterWoman}/4)`);
                             showRoom('finale');
+                            showMessage(`${prostStr} Der Schnaps brennt. Die alte Frau singt weiter. (Weitere Schnäpse: ${state.schnapsAfterWoman}/4)`);
                         }
                     } else {
                         state.schnapsCount++;
+                        let prostStr = "Prost! ".repeat(state.schnapsCount + state.bierCount).trim();
                         if ((state.schnapsCount + state.bierCount) >= 3 && !state.oldWomanAppeared) {
                             state.oldWomanAppeared = true;
-                            showMessage(`Prost! (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier). Plötzlich betritt eine alte Frau die Hütte und steuert direkt auf euch zu!`);
                             showRoom('finale');
+                            showMessage(`${prostStr} Plötzlich betritt eine alte Frau die Hütte und steuert direkt auf euch zu!`);
                         } else if (state.schnapsCount >= 5) {
-                            alert(`Prost! (${state.schnapsCount} Schnaps). Das war einer zu viel. Du fällst besoffen vom Hocker. Zeit fürs Bett!`);
+                            alert(`${prostStr} Das war einer zu viel. Du fällst besoffen vom Hocker. Zeit fürs Bett!`);
                             location.reload();
                         } else {
-                            showMessage(`Prost! Der Schnaps brennt gut. (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier)`);
                             showRoom('finale');
+                            showMessage(`${prostStr} Der Schnaps brennt gut. (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier)`);
                         }
                     }
                 }},
                 { type: 'action', text: "Trinke ein frisches Bier!", action: () => {
                     if (state.oldWomanAppeared) {
                         state.bierAfterWoman++;
+                        let prostStr = "Prost! ".repeat(state.schnapsCount + state.bierCount + state.schnapsAfterWoman + state.bierAfterWoman).trim();
                         if (state.bierAfterWoman >= 5) {
-                            alert("Du hast das Spiel komplett durchgespielt (und bist sturzbetrunken). Zeit fürs Bett!");
+                            alert(`${prostStr} Du hast das Spiel komplett durchgespielt (und bist sturzbetrunken). Zeit fürs Bett!`);
                             location.reload(); 
                         } else {
-                            showMessage(`Prost! Kühles Bier. Die alte Frau singt lauter. (Weitere Biere: ${state.bierAfterWoman}/5)`);
                             showRoom('finale');
+                            showMessage(`${prostStr} Kühles Bier. Die alte Frau singt lauter. (Weitere Biere: ${state.bierAfterWoman}/5)`);
                         }
                     } else {
                         state.bierCount++;
+                        let prostStr = "Prost! ".repeat(state.schnapsCount + state.bierCount).trim();
                         if ((state.schnapsCount + state.bierCount) >= 3 && !state.oldWomanAppeared) {
                             state.oldWomanAppeared = true;
-                            showMessage(`Prost! (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier). Plötzlich betritt eine alte Frau die Hütte und steuert direkt auf euch zu!`);
                             showRoom('finale');
+                            showMessage(`${prostStr} Plötzlich betritt eine alte Frau die Hütte und steuert direkt auf euch zu!`);
                         } else if (state.bierCount >= 5) {
-                            alert(`Prost! (${state.bierCount} Bier). Das war eins zu viel. Du fällst besoffen vom Hocker. Zeit fürs Bett!`);
+                            alert(`${prostStr} Das war eins zu viel. Du fällst besoffen vom Hocker. Zeit fürs Bett!`);
                             location.reload();
                         } else {
-                            showMessage(`Prost! Ein herrlich kühles Bier. (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier)`);
                             showRoom('finale');
+                            showMessage(`${prostStr} Ein herrlich kühles Bier. (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier)`);
                         }
                     }
                 }},
@@ -892,14 +912,12 @@
         invList.innerHTML = '';
         
         let items = [];
-        // Diese Items werden bei Benutzung NICHT verbraucht und bleiben dauerhaft im Inventar:
         if (state.knowsCode) items.push({id: 'code', name: "🧠 Code: 0305"});
         if (state.hasKey) items.push({id: 'key', name: "🔑 Messing-Schlüssel"});
         if (state.hasCrowbar) items.push({id: 'crowbar', name: "🔧 Brecheisen"});
         if (state.hasFlashlight) items.push({id: 'flashlight', name: "🔦 Taschenlampe"});
         if (state.hasSlippers) items.push({id: 'slippers', name: "🩴 Badeschlappen"});
 
-        // Diese Items werden bei Benutzung "vernichtet" / verbraucht und verschwinden:
         if (state.hasNaOH && !state.acidNeutralized) items.push({id: 'naoh', name: "🧪 Natriumhydroxid"});
         if (state.hasOil && !state.leverOiled) items.push({id: 'oil', name: "🛢️ Schmieröl"});
         if (state.hasPen && !state.circuitBridged) items.push({id: 'pen', name: "✒️ Goldener Füller"});
@@ -925,7 +943,6 @@
 
         const room = rooms[roomKey];
         document.getElementById('scene-title').innerText = room.title;
-        // Text auswerten, falls es sich um eine Funktion handelt (wie im Finale)
         document.getElementById('story').innerText = typeof room.text === 'function' ? room.text() : room.text;
         
         document.getElementById('image-container').innerHTML = room.image();
