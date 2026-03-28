@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Escape from Alpenkönig</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-main: #33ff33;
+            --text-highlight: #ffcc00;
+            --text-action: #ff33ff;
+            --border-color: #555555;
+            --inv-bg: #111111;
+        }
+
+        * {
+            box-sizing: border-box;
+            overscroll-behavior-y: none; 
+        }
+
+        body {
+            background-color: #0c0c0c;
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+            height: 100dvh; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            overflow: hidden; 
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%;
+            max-width: 900px;
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            border: none;
+        }
+
+        @media (min-width: 901px) {
+            #game-container {
+                height: 95vh;
+                border: 4px solid var(--border-color);
+                border-radius: 10px;
+                box-shadow: 0 0 20px rgba(51, 255, 51, 0.2);
+            }
+        }
+
+        header {
+            background-color: #222;
+            color: var(--text-highlight);
+            text-align: center;
+            padding: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-bottom: 2px solid var(--border-color);
+            letter-spacing: 2px;
+            flex: 0 0 auto;
+            z-index: 10;
+        }
+
+        #screen {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-bottom: 2px solid var(--border-color);
+            background: linear-gradient(to bottom, #0a0a0a, #000000);
+        }
+
+        #image-container {
+            flex: 0 0 auto;
+            height: 28vh;
+            min-height: 150px;
+            background: #000;
+            border-bottom: 2px dashed #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #image-container svg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            image-rendering: pixelated;
+        }
+
+        #text-container {
+            flex: 1 1 auto;
+            padding: 15px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #scene-title {
+            color: var(--text-action);
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            text-decoration: underline;
+        }
+
+        #story {
+            line-height: 1.5;
+        }
+
+        #message-box {
+            color: var(--text-highlight);
+            font-style: italic;
+            margin-top: 15px;
+            min-height: 1.5em;
+            font-weight: bold;
+        }
+
+        #lower-panel {
+            flex: 0 0 38vh;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #choices-container {
+            flex: 1 1 auto;
+            padding: 10px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .choice-btn {
+            display: block;
+            width: 100%;
+            background-color: transparent;
+            color: var(--text-main);
+            border: 1px dashed var(--border-color);
+            padding: 12px 10px;
+            margin-bottom: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+
+        .choice-btn:hover, .choice-btn:active {
+            background-color: var(--text-main);
+            color: var(--bg-color);
+            border-style: solid;
+        }
+        
+        .choice-btn.examine {
+            color: #88ccff;
+            border-color: #335577;
+        }
+        .choice-btn.examine:hover, .choice-btn.examine:active {
+            background-color: #88ccff;
+            color: #000;
+        }
+
+        #inventory-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        #inventory-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            border: 2px solid var(--text-highlight);
+            border-radius: 8px;
+            padding: 20px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);
+            color: var(--text-main);
+        }
+
+        .modal-content h3 {
+            color: var(--text-highlight);
+            text-align: center;
+            margin-top: 0;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        #inventory-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+            font-size: 1rem;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        #inventory-list li {
+            padding: 12px 0;
+            border-bottom: 1px dashed #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .use-btn {
+            background: transparent;
+            color: var(--text-action);
+            border: 1px solid var(--text-action);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            margin-left: 10px;
+            transition: all 0.2s;
+        }
+
+        .use-btn:hover, .use-btn:active {
+            background: var(--text-action);
+            color: #000;
+        }
+
+        #inv-toggle-btn {
+            border-radius: 0;
+            border: none;
+            border-top: 2px solid var(--text-highlight);
+            color: var(--text-highlight);
+            text-align: center;
+            font-weight: bold;
+            background-color: #1a1a1a;
+            padding: 15px;
+            margin: 0;
+            flex: 0 0 auto;
+        }
+
+        #inv-toggle-btn:hover, #inv-toggle-btn:active {
+            background-color: var(--text-highlight);
+            color: #000;
+        }
+
+        @media (max-width: 768px) {
+            header { font-size: 1rem; padding: 8px; }
+            #lower-panel { flex: 0 0 35vh; }
+            .choice-btn { padding: 14px 10px; font-size: 0.95rem; }
+            .use-btn { padding: 8px 12px; font-size: 0.9rem; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-main); }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <header>🏔️ ESCAPE FROM ALPENKÖNIG 🍻</header>
+    
+    <div id="screen">
+        <div id="image-container"></div>
+        <div id="text-container">
+            <div id="scene-title">Lade...</div>
+            <div id="story"></div>
+            <div id="message-box"></div>
+        </div>
+    </div>
+    
+    <div id="lower-panel">
+        <div id="choices-container">
+            <div id="action-buttons"></div>
+        </div>
+        <button class="choice-btn" id="inv-toggle-btn" onclick="toggleInventory()">
+            🎒 Inventar öffnen (<span id="inv-count">0</span>)
+        </button>
+    </div>
+</div>
+
+<div id="inventory-modal">
+    <div class="modal-content">
+        <h3>🎒 Dein Inventar</h3>
+        <ul id="inventory-list"></ul>
+        <button class="choice-btn" style="border-color: #ff3333; color: #ff3333; text-align: center; margin-top: 10px;" onclick="toggleInventory()">❌ Schließen</button>
+    </div>
+</div>
+
+<script>
+    // --- SPIELSTATUS ---
+    let state = {
+        knowsCode: false,
+        hasNaOH: false,
+        acidNeutralized: false,
+        hasKey: false,
+        saunaUnlocked: false,
+        hasCrowbar: false,
+        kellerUnlocked: false,
+        doorToKellerOpen: false,
+        hasOil: false,
+        leverOiled: false,
+        barricadeBroken: false,
+        hasFlashlight: false,
+        hasAkte: false,
+        hasPen: false,
+        hasSlippers: false,
+        hasBowlingball: false,
+        beerCount: 0
+    };
+
+    let currentRoom = '';
+
+    // --- NACHRICHTEN SYSTEM ---
+    function toggleInventory() {
+        const modal = document.getElementById('inventory-modal');
+        modal.classList.toggle('active');
+    }
+
+    function showMessage(msg) {
+        const msgBox = document.getElementById('message-box');
+        msgBox.innerText = `>> ${msg}`;
+        msgBox.style.opacity = 0;
+        setTimeout(() => msgBox.style.opacity = 1, 50);
+        
+        const textContainer = document.getElementById('text-container');
+        setTimeout(() => textContainer.scrollTop = textContainer.scrollHeight, 100);
+    }
+
+    // --- ITEM BENUTZUNG ---
+    function useItem(itemId) {
+        toggleInventory(); 
+        let msg = "Das ergibt hier keinen Sinn.";
+
+        if (itemId === 'naoh') {
+            if (currentRoom === 'schwimmbad' && !state.acidNeutralized) {
+                state.acidNeutralized = true;
+                msg = "Es zischt, blubbert und dampft! Die ätzende Lösung ist nun pH-neutral.";
+            } else {
+                msg = "Natriumhydroxid einfach so zu verstreuen ist keine pädagogisch wertvolle Idee.";
+            }
+        } 
+        else if (itemId === 'key') {
+            if (currentRoom === 'sauna_tuer' && !state.saunaUnlocked) {
+                state.saunaUnlocked = true;
+                msg = "Der rostige Schlüssel knirscht, aber das Schloss springt auf!";
+                showRoom('sauna_innen');
+                showMessage(msg);
+                return;
+            } else {
+                msg = "Der Schlüssel passt hier nicht in Schlüsselloch.";
+            }
+        } 
+        else if (itemId === 'crowbar') {
+            if (currentRoom === 'keller' && !state.barricadeBroken) {
+                state.barricadeBroken = true;
+                msg = "*KRRAAAACK!* Mit purer Hebelkraft reißst du die dicken Bretter ab. Der Weg ist frei!";
+            } else if (currentRoom === 'heizung' && !state.doorToKellerOpen) {
+                msg = "Das Brecheisen ist zu dick für die Ritze der Eisentür. Du musst diesen verrosteten Hebel betätigen.";
+            } else {
+                msg = "Du schwingst das Brecheisen drohend, aber es hilft in dieser Situation nicht weiter.";
+            }
+        } 
+        else if (itemId === 'code') {
+            if (currentRoom === 'fitness' && !state.kellerUnlocked) {
+                state.kellerUnlocked = true;
+                msg = "*Biep Biep Biep - Klick!* Die schwere Luke am Boden des Fitnessraums schwingt auf und offenbart eine steile Eisentreppe.";
+            } else {
+                msg = "Du murmelst mathematische Nullstellen vor dich hin. Niemand reagiert.";
+            }
+        }
+        else if (itemId === 'oil') {
+            if (currentRoom === 'heizung' && !state.leverOiled) {
+                state.leverOiled = true;
+                msg = "Du tropfst das trübe Maschinenöl auf das Gelenk des Hebels. Er lässt sich nun bewegen!";
+            } else {
+                msg = "Du willst hier nicht alles ölig machen.";
+            }
+        }
+        else if (itemId === 'flashlight') {
+            if (currentRoom === 'langer_gang') {
+                msg = "Die Taschenlampe durchschneidet die Dunkelheit. Du siehst nun den Weg durch den grausigen Tunnel.";
+                // Dies triggert keinen neuen Zustand, sondern erlaubt einen Button im Raum "langer_gang".
+            } else {
+                msg = "Du schaltest die Taschenlampe an und wieder aus. Klick. Klack.";
+            }
+        }
+        // Useless Items
+        else if (itemId === 'akte') {
+            msg = "Du blätterst in der Akte: '...Gemeinde Reith bei Seefeld wusste von den illegalen Bauten. Die geheimen unterirdischen Komplexe des Hotel Alpenkönig sind strikt zu verschweigen...' Das erklärt einiges.";
+        }
+        else if (itemId === 'pen') {
+            msg = "Ein wunderschöner goldener Füller. Gut, um Sechsen unter Klausuren zu setzen, aber hier nutzlos.";
+        }
+        else if (itemId === 'slippers') {
+            msg = "Flauschige weiße Hotel-Slipper. Du fühlst dich kurz wie ein VIP, steckst sie dann aber wieder ein.";
+        }
+        else if (itemId === 'bowlingball') {
+            msg = "Die Bowlingkugel ist unglaublich schwer in deiner Tasche. Warum trägst du die überhaupt herum?";
+        }
+
+        showRoom(currentRoom); 
+        showMessage(msg);
+    }
+
+    // --- RÄUME, LOGIK & PIXEL-ART ---
+    const rooms = {
+        bar: {
+            title: "Die Hotelbar",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#1e1826" />
+                <rect x="10" y="5" width="44" height="2" fill="#3a2845" />
+                <rect x="10" y="12" width="44" height="2" fill="#3a2845" />
+                <rect x="15" y="2" width="2" height="3" fill="#33ff33" />
+                <rect x="20" y="1" width="2" height="4" fill="#ff33ff" />
+                <rect x="25" y="9" width="3" height="3" fill="#ffcc00" />
+                <rect x="28" y="15" width="8" height="8" fill="#ffcc99" />
+                <rect x="26" y="23" width="12" height="13" fill="#555" />
+                <rect x="0" y="28" width="64" height="8" fill="#4a3020" />
+            </svg>`,
+            text: "Du stehst mit deiner Lehrergruppe an der Bar des 'Hotel Alpenkönig' in Seefeld. Die Konferenz war furchtbar, aber ihr wollt eigentlich nur noch in die Enzianhütte auf ein Bier.\n\nEin massiver Schneesturm blockiert den Haupteingang. Der mürrische Barkeeper poliert apathisch Gläser.",
+            choices: [
+                { type: 'examine', text: "Sprich mit dem Barkeeper", action: () => showMessage("Barkeeper: 'Der alte Hausmeister hat tief im Keller einen Durchgang zur Tennishalle gebaut. Aber passen Sie auf... da unten gehen seltsame Dinge vor sich.'") },
+                { type: 'examine', text: "Untersuche den klebrigen Bierdeckel", action: () => showRoom('bierdeckel') },
+                { type: 'action', text: "Gehe in den düsteren Flur", action: () => showRoom('flur') }
+            ]
+        },
+        bierdeckel: {
+            title: "Der klebrige Bierdeckel",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#111" />
+                <rect x="16" y="4" width="32" height="28" fill="#ddccaa" rx="2" ry="2" />
+                <path d="M 20 12 L 24 12 M 22 10 L 22 16" stroke="#000" stroke-width="1" />
+                <path d="M 26 10 C 26 10, 32 18, 40 12" stroke="#000" fill="none" />
+                <path d="M 22 24 L 42 22" stroke="#000" stroke-width="0.5" stroke-dasharray="2 1" />
+            </svg>`,
+            text: "Jemand hat hastig Notizen hinterlassen:\n\n'PIN für den Zugang nach unten: f(x) = x² - 8x + 15. Die Nullstellen bilden den Code (Format: x1,x2 ohne Komma).'",
+            choices: [
+                { type: 'action', text: "Als Mathe-Genie das Rätsel lösen!", condition: () => !state.knowsCode, action: () => {
+                    state.knowsCode = true;
+                    updateInventory();
+                    showMessage("x1=3 und x2=5. Der Code ist 0305! Eingeloggt.");
+                    showRoom('bar');
+                }},
+                { type: 'action', text: "Zurück zur Bar", action: () => showRoom('bar') }
+            ]
+        },
+        flur: {
+            title: "Der dunkle Flur",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#222" />
+                <polygon points="0,0 20,12 20,24 0,36" fill="#1a1a1a" />
+                <polygon points="64,0 44,12 44,24 64,36" fill="#1a1a1a" />
+                <rect x="5" y="10" width="8" height="20" fill="#332" />
+                <rect x="51" y="10" width="8" height="20" fill="#332" />
+                <rect x="20" y="12" width="24" height="12" fill="#111" />
+                ${!state.hasNaOH ? `<rect x="25" y="22" width="6" height="6" fill="#2288cc" />` : ''}
+            </svg>`,
+            text: "Ein spärlich beleuchteter Flur. Viele Türen gehen von hier ab. Ein unbeaufsichtigter Reinigungswagen der Putzkolonne steht verlassen in der Ecke.",
+            choices: [
+                { type: 'examine', text: "Untersuche den Putzwagen", condition: () => !state.hasNaOH, action: () => {
+                    state.hasNaOH = true;
+                    updateInventory();
+                    showMessage("Du findest eine stark konzentrierte Dose Natriumhydroxid (NaOH). Eingepackt!");
+                    showRoom('flur');
+                }},
+                { type: 'action', text: "Gehe zur Tür 'Schwimmbad'", action: () => showRoom('schwimmbad') },
+                { type: 'action', text: "Gehe zur Tür 'Sauna'", action: () => state.saunaUnlocked ? showRoom('sauna_innen') : showRoom('sauna_tuer') },
+                { type: 'action', text: "Gehe zur Tür 'Konferenzräume'", action: () => showRoom('konferenz') },
+                { type: 'action', text: "Gehe zur Tür 'Fitnessraum'", action: () => showRoom('fitness') },
+                { type: 'action', text: "Gehe ins 'Treppenhaus'", action: () => showRoom('treppenhaus') },
+                { type: 'action', text: "Zurück zur Bar", action: () => showRoom('bar') }
+            ]
+        },
+        treppenhaus: {
+            title: "Zentrales Treppenhaus",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#333" />
+                <path d="M 0 36 L 32 18 L 64 36 Z" fill="#222" />
+                <path d="M 32 18 L 48 5 L 64 18 Z" fill="#111" />
+                <rect x="28" y="0" width="8" height="36" fill="#555" />
+            </svg>`,
+            text: "Ein kaltes Betontreppenhaus. Nach oben geht es zu den noblen Suiten, nach unten riecht es muffig nach Keller und altem Holzöl.",
+            choices: [
+                { type: 'action', text: "Gehe nach oben (Präsidentensuite)", action: () => showRoom('suite') },
+                { type: 'action', text: "Gehe nach unten (Alte Kegelbahn)", action: () => showRoom('kegelbahn') },
+                { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        suite: {
+            title: "Präsidentensuite",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#4a2e2b" />
+                <rect x="10" y="15" width="20" height="15" fill="#8c1c13" />
+                <rect x="12" y="12" width="16" height="5" fill="#fff" />
+                <rect x="40" y="20" width="18" height="10" fill="#5c4033" />
+                ${!state.hasAkte ? `<rect x="42" y="18" width="6" height="2" fill="#eee" />` : ''}
+                ${!state.hasPen ? `<rect x="50" y="19" width="3" height="1" fill="#ffd700" />` : ''}
+            </svg>`,
+            text: "Die teuerste Suite des Hauses. Vergoldete Wasserhähne und Samtvorhänge. Auf dem massiven Schreibtisch liegen Dokumente. Das Hotelmanagement hat hier wohl überstürzt gepackt.",
+            choices: [
+                { type: 'examine', text: "Durchsuche den Schreibtisch", condition: () => !state.hasAkte || !state.hasPen, action: () => {
+                    if(!state.hasAkte) { state.hasAkte = true; showMessage("Du findest eine dicke Akte mit der Aufschrift 'Amtshaftungsklage Gemeinde Reith bei Seefeld'."); }
+                    if(!state.hasPen) { state.hasPen = true; showMessage("Außerdem steckst du einen goldenen Füller ein."); }
+                    updateInventory();
+                    showRoom('suite');
+                }},
+                { type: 'examine', text: "Untersuche das Badezimmer", condition: () => !state.hasSlippers, action: () => {
+                    state.hasSlippers = true;
+                    updateInventory();
+                    showMessage("Du nimmst ein Paar weiße Badeschlappen mit. Sehr flauschig.");
+                    showRoom('suite');
+                }},
+                { type: 'action', text: "Zurück ins Treppenhaus", action: () => showRoom('treppenhaus') }
+            ]
+        },
+        kegelbahn: {
+            title: "Die alte Kegelbahn",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#111" />
+                <polygon points="10,36 28,15 36,15 54,36" fill="#d2b48c" />
+                <polygon points="31,15 33,15 33,36 31,36" fill="#000" />
+                <rect x="25" y="10" width="14" height="5" fill="#222" />
+                ${!state.hasBowlingball ? `<circle cx="48" cy="30" r="4" fill="#800000" />` : ''}
+                ${!state.hasFlashlight ? `<rect x="15" y="32" width="5" height="2" fill="#ffcc00" transform="rotate(-20 15 32)" />` : ''}
+            </svg>`,
+            text: "Du stehst in einer staubigen, stillgelegten Kegelbahn im Untergeschoss. Die hölzernen Bahnen sind verzogen. Am Kugelrücklauf liegt allerlei Gerümpel.",
+            choices: [
+                { type: 'examine', text: "Durchsuche den Kugelrücklauf", condition: () => !state.hasFlashlight || !state.hasBowlingball, action: () => {
+                    if(!state.hasFlashlight) { state.hasFlashlight = true; showMessage("Bingo! Eine alte, aber noch funktionierende Taschenlampe."); }
+                    if(!state.hasBowlingball) { state.hasBowlingball = true; showMessage("Du steckst eine extrem schwere, rote Bowlingkugel ein. Deine Bandscheiben hassen dich."); }
+                    updateInventory();
+                    showRoom('kegelbahn');
+                }},
+                { type: 'action', text: "Zurück ins Treppenhaus", action: () => showRoom('treppenhaus') }
+            ]
+        },
+        konferenz: {
+            title: "Konferenzraum 'Alpspitze'",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#2a2a35" />
+                <rect x="10" y="20" width="44" height="8" fill="#555" />
+                <rect x="20" y="5" width="24" height="12" fill="#eee" />
+                <rect x="20" y="16" width="24" height="1" fill="#aaa" />
+            </svg>`,
+            text: "Ein typischer, trister Tagungsraum. Flipcharts, ein langes Whiteboard an der Wand. Dir fällt auf, dass ein kalter Luftzug hinter dem Whiteboard hervorweht.",
+            choices: [
+                { type: 'action', text: "Schiebe das Whiteboard zur Seite", action: () => {
+                    showMessage("Hinter dem Board klafft ein Loch in der Wand, das in einen unbeleuchteten Raum führt...");
+                    showRoom('hinterzimmer');
+                }},
+                { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        hinterzimmer: {
+            title: "Das verborgene Hinterzimmer",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#150a0a" />
+                <rect x="5" y="25" width="30" height="5" fill="#800020" />
+                <path d="M 45 28 L 45 15 L 55 15 L 55 20 L 48 20 L 48 28 Z" fill="#444" />
+                <circle cx="43" cy="14" r="2" fill="#555" />
+                <circle cx="57" cy="14" r="2" fill="#555" />
+                ${!state.hasOil ? `<rect x="20" y="15" width="3" height="5" fill="#556b2f" />` : ''}
+            </svg>`,
+            text: "Ein extrem verstörender Raum. Der Boden ist mit alten, abgewetzten Zirkusmatten ausgelegt. In der Mitte steht ein metallener Gynäkologenstuhl mit Lederriemen. Wer auch immer hier verweilt hat... du willst ihn nicht kennen.",
+            choices: [
+                { type: 'examine', text: "Untersuche das rostige Regal", condition: () => !state.hasOil, action: () => {
+                    state.hasOil = true;
+                    updateInventory();
+                    showMessage("Du findest eine alte Kanne mit trübem Schmieröl. Könnte nützlich sein.");
+                    showRoom('hinterzimmer');
+                }},
+                { type: 'action', text: "Zurück in den Konferenzraum (Flucht!)", action: () => showRoom('konferenz') }
+            ]
+        },
+        schwimmbad: {
+            title: "Das stillgelegte Schwimmbad",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#112233" />
+                <polygon points="0,15 64,15 54,36 10,36" fill="#0a1520" />
+                <rect x="20" y="20" width="24" height="10" fill="#0f1f2f" />
+                <ellipse cx="32" cy="30" rx="10" ry="4" fill="${state.acidNeutralized ? '#3388ff' : '#33ff33'}" />
+                ${!state.hasKey ? '<rect x="31" y="29" width="3" height="1" fill="#ffcc00" />' : ''}
+            </svg>`,
+            text: "Die blauen Kacheln sind dreckig. Am tiefsten Punkt des leeren Beckens hat sich eine trübe, übelriechende Pfütze (pH 1 Entkalker) gebildet. Darin glänzt ein messingfarbener Schlüssel.",
+            choices: [
+                { type: 'action', text: "Greife mit der Hand nach dem Schlüssel", condition: () => !state.acidNeutralized, action: () => showMessage("Autsch! Das brennt höllisch! Die Säure muss erst neutralisiert werden.") },
+                { type: 'action', text: "Nimm den Schlüssel", condition: () => state.acidNeutralized && !state.hasKey, action: () => {
+                    state.hasKey = true;
+                    updateInventory();
+                    showMessage("Du hast den alten Saunaschlüssel aus dem neutralisierten Wasser gefischt.");
+                    showRoom('schwimmbad');
+                }},
+                { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        sauna_tuer: {
+            title: "Vor der Sauna",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#1a0f05" />
+                <rect x="20" y="0" width="24" height="36" fill="#8b5a2b" />
+                ${!state.saunaUnlocked ? `<rect x="30" y="16" width="6" height="6" fill="#aaa" />` : ''}
+            </svg>`,
+            text: "Die Tür aus massivem Holz ist mit einem verrosteten Vorhängeschloss verriegelt.",
+            choices: [
+                { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        sauna_innen: {
+            title: "In der Sauna",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#a0522d" />
+                <rect x="0" y="15" width="64" height="5" fill="#cd853f" />
+                <rect x="45" y="18" width="15" height="18" fill="#333" />
+                ${!state.hasCrowbar ? '<rect x="42" y="33" width="8" height="2" fill="#ff0000" />' : ''}
+            </svg>`,
+            text: "Es ist eiskalt. Ganz hinten unter dem Steinofen klemmt etwas Rotes.",
+            choices: [
+                { type: 'action', text: "Nimm das Brecheisen", condition: () => !state.hasCrowbar, action: () => {
+                    state.hasCrowbar = true;
+                    updateInventory();
+                    showMessage("Du zerrst ein massives rotes Brecheisen hervor. Sehr nützlich.");
+                    showRoom('sauna_innen');
+                }},
+                { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        fitness: {
+            title: "Der Fitnessraum",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#2c3e50" />
+                <rect x="10" y="25" width="44" height="10" fill="#34495e" />
+                <rect x="26" y="28" width="12" height="6" fill="${state.kellerUnlocked ? '#111' : '#7f8c8d'}" />
+                <rect x="20" y="10" width="6" height="8" fill="#bdc3c7" />
+                <rect x="21" y="12" width="4" height="2" fill="${state.kellerUnlocked ? '#33ff33' : '#ff3333'}" />
+            </svg>`,
+            text: "Rostige Hanteln. Im Boden befindet sich eine quadratische, schwere Metallluke mit einem elektronischen Tastenfeld daneben.",
+            choices: [
+                { type: 'action', text: "Steige die Luke hinab", condition: () => state.kellerUnlocked, action: () => showRoom('heizung') },
+                { type: 'action', text: "Zurück in den Flur", action: () => showRoom('flur') }
+            ]
+        },
+        heizung: {
+            title: "Der Heizungskeller",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#1a0000" />
+                <rect x="40" y="5" width="20" height="31" fill="#330000" />
+                <path d="M 20 25 L 20 15 L 30 15 L 30 20 L 25 20 L 25 25 Z" fill="#555" />
+                <rect x="5" y="10" width="10" height="26" fill="#222" />
+                <circle cx="10" cy="20" r="2" fill="${state.leverOiled ? '#33ff33' : '#aa3333'}" />
+                <rect x="10" y="19" width="${state.doorToKellerOpen ? '6' : '2'}" height="${state.doorToKellerOpen ? '2' : '6'}" fill="#777" />
+            </svg>`,
+            text: "Es ist unfassbar heiß hier. Riesige Kessel brummen. Mitten im Raum steht ein antiker Verhörstuhl mit dicken Lederriemen. Die Gemeinde Reith hat hier offenbar 'Sonderbefragungen' durchgeführt.\n\nAn der Wand ist eine gewaltige Eisentür, daneben ein völlig verrosteter Wandhebel.",
+            choices: [
+                { type: 'action', text: "Zieh den Hebel mit roher Gewalt", condition: () => !state.leverOiled && !state.doorToKellerOpen, action: () => showMessage("Er bewegt sich keinen Millimeter. Das Gelenk ist komplett festgerostet.") },
+                { type: 'action', text: "Betätige den geölten Hebel", condition: () => state.leverOiled && !state.doorToKellerOpen, action: () => {
+                    state.doorToKellerOpen = true;
+                    showMessage("*Quiiietsch... RUMMS!* Die schwere Eisentür gleitet beiseite.");
+                    showRoom('heizung');
+                }},
+                { type: 'action', text: "Gehe durch die Eisentür in die Tiefe", condition: () => state.doorToKellerOpen, action: () => showRoom('keller') },
+                { type: 'action', text: "Klettere die Leiter hoch zum Fitnessraum", action: () => showRoom('fitness') }
+            ]
+        },
+        keller: {
+            title: "Tiefe Kellergewölbe",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#111" />
+                <path d="M 0 0 L 15 5 L 10 20 L 0 36 Z" fill="#2a2a2a" />
+                <path d="M 64 0 L 50 8 L 55 25 L 64 36 Z" fill="#2a2a2a" />
+                ${!state.barricadeBroken ? `
+                <rect x="15" y="10" width="35" height="4" fill="#5c4033" transform="rotate(10 32 12)" />
+                <rect x="15" y="20" width="35" height="4" fill="#5c4033" transform="rotate(-5 32 22)" />` : `
+                <rect x="15" y="28" width="15" height="4" fill="#5c4033" transform="rotate(20 20 30)" />`}
+            </svg>`,
+            text: "Eine feuchte Tropfsteinhöhle tief im Fels. Ein Durchgang ist kreuz und quer mit dicken, nagelneuen Holzbrettern vernagelt.",
+            choices: [
+                { type: 'action', text: "Krieche durch die Öffnung", condition: () => state.barricadeBroken, action: () => showRoom('langer_gang') },
+                { type: 'action', text: "Zurück in den Heizungskeller", action: () => showRoom('heizung') }
+            ]
+        },
+        langer_gang: {
+            title: "Der Fledermaus-Gang",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#050505" />
+                ${state.hasFlashlight ? `<polygon points="32,36 10,0 54,0" fill="#ffffcc" opacity="0.3" />` : ''}
+                <path d="M 20 30 L 22 32 L 20 34 Z" fill="#444" />
+                <path d="M 40 28 L 44 29 L 42 32 Z" fill="#444" />
+                <path d="M 30 25 L 32 24 L 33 26 Z" fill="#444" />
+            </svg>`,
+            text: "Es ist absolute Finsternis. Der Geruch nach Ammoniak beißt in der Nase. Unter deinen Füßen knirscht es widerlich - der Boden ist übersät mit Fledermauskadavern.",
+            choices: [
+                { type: 'action', text: "Gehe blind weiter ins Dunkle", action: () => {
+                    showMessage("Du stolperst über etwas Matschiges, rutschst aus und fällst mit dem Gesicht in Fledermaus-Gekröse. Panisch rennst du zurück!");
+                    showRoom('keller');
+                }},
+                { type: 'action', text: "Leuchte den Weg mit der Taschenlampe aus und gehe weiter", condition: () => state.hasFlashlight, action: () => showRoom('leiter_loch') },
+                { type: 'action', text: "Zurück in die Höhle", action: () => showRoom('keller') }
+            ]
+        },
+        leiter_loch: {
+            title: "Das Loch in der Wand",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#4a4a4a" />
+                <rect x="20" y="5" width="24" height="20" fill="#000" />
+                <rect x="25" y="10" width="2" height="26" fill="#8b5a2b" />
+                <rect x="37" y="10" width="2" height="26" fill="#8b5a2b" />
+                <rect x="25" y="15" width="14" height="2" fill="#8b5a2b" />
+                <rect x="25" y="22" width="14" height="2" fill="#8b5a2b" />
+                <rect x="25" y="29" width="14" height="2" fill="#8b5a2b" />
+            </svg>`,
+            text: "Am Ende des widerlichen Tunnels stehst du vor einer unverputzten Ziegelmauer. Jemand hat ein großes Loch hineingebrochen. Eine alte Holzleiter führt hinauf.",
+            choices: [
+                { type: 'action', text: "Klettere die Leiter hoch und zwänge dich durchs Loch", action: () => showRoom('tennishalle') },
+                { type: 'action', text: "Zurück durch den Fledermaus-Gang", action: () => showRoom('langer_gang') }
+            ]
+        },
+        tennishalle: {
+            title: "Die alte Tennishalle",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#0a0a0a" />
+                <polygon points="0,20 64,20 64,36 0,36" fill="#800000" />
+                <polygon points="30,20 34,20 40,36 24,36" fill="#fff" opacity="0.2" />
+                <rect x="30" y="12" width="6" height="8" fill="#ffd700" opacity="0.8" />
+                <rect x="30" y="10" width="6" height="2" fill="#00ff00" />
+            </svg>`,
+            text: "Deine Füße knirschen auf rotem Sand. Die riesige Halle ist dunkel. Auf der gegenüberliegenden Seite blitzt unter einer Tür gemütlicher Lichtschein hervor. Leise Volksmusik erklingt.",
+            choices: [
+                { type: 'action', text: "Öffne die Tür und trete ins Licht!", action: () => showRoom('finale') },
+                { type: 'action', text: "Zurück ins dunkle Loch", action: () => showRoom('leiter_loch') }
+            ]
+        },
+        finale: {
+            title: "🍻 Die Enzianhütte 🍻",
+            image: () => `<svg viewBox="0 0 64 36" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+                <rect width="64" height="36" fill="#3e2723" />
+                <rect x="5" y="10" width="15" height="26" fill="#111" />
+                <path d="M 8 36 L 12 25 L 17 36 Z" fill="#ff5722" />
+                <path d="M 10 36 L 12 28 L 15 36 Z" fill="#ffeb3b" />
+                <rect x="40" y="12" width="8" height="8" fill="#ffb74d" />
+                <rect x="38" y="20" width="12" height="16" fill="#4caf50" />
+                <rect x="25" y="25" width="39" height="11" fill="#5d4037" />
+            </svg>`,
+            text: "DU HAST ES GESCHAFFT!\n\nDu stehst hinter dem Tresen der rustikalen Enzianhütte. Der Wirt schaut verdutzt, greift dann aber grinsend zur Flasche Zirbenschnaps. Du hast das finstere Geheimnis der Gemeinde Reith überlebt. Prost!",
+            choices: [
+                { type: 'action', text: "Trinke einen Zirbenschnaps!", action: () => {
+                    state.beerCount++;
+                    showMessage(`Prost! Das war Schnaps Nummer ${state.beerCount}.`);
+                    if(state.beerCount > 4) {
+                        alert("Du hast das Spiel durchgespielt (und bist betrunken). Zeit fürs Bett!");
+                        location.reload(); 
+                    }
+                }},
+                { type: 'action', text: "Spiel beenden und neu starten", action: () => location.reload() }
+            ]
+        }
+    };
+
+    // --- UI UPDATES ---
+    function updateInventory() {
+        const invList = document.getElementById('inventory-list');
+        const invCount = document.getElementById('inv-count');
+        invList.innerHTML = '';
+        
+        let items = [];
+        if (state.knowsCode) items.push({id: 'code', name: "🧠 Code: 0305"});
+        if (state.hasNaOH) items.push({id: 'naoh', name: "🧪 Natriumhydroxid"});
+        if (state.hasKey) items.push({id: 'key', name: "🔑 Messing-Schlüssel"});
+        if (state.hasCrowbar) items.push({id: 'crowbar', name: "🔧 Brecheisen"});
+        if (state.hasOil) items.push({id: 'oil', name: "🛢️ Schmieröl"});
+        if (state.hasFlashlight) items.push({id: 'flashlight', name: "🔦 Taschenlampe"});
+        if (state.hasAkte) items.push({id: 'akte', name: "📁 Akte 'Gemeinde Reith'"});
+        if (state.hasPen) items.push({id: 'pen', name: "✒️ Goldener Füller"});
+        if (state.hasSlippers) items.push({id: 'slippers', name: "🩴 Badeschlappen"});
+        if (state.hasBowlingball) items.push({id: 'bowlingball', name: "🎳 Bowlingkugel"});
+
+        if (invCount) invCount.innerText = items.length;
+
+        if (items.length === 0) {
+            invList.innerHTML = "<li style='color: #666; border:none; padding-left:0;'><i>Leere Taschen</i></li>";
+        } else {
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${item.name}</span> <button class="use-btn" onclick="useItem('${item.id}')">Benutzen</button>`;
+                invList.appendChild(li);
+            });
+        }
+    }
+
+    function showRoom(roomKey) {
+        currentRoom = roomKey; 
+        document.getElementById('message-box').innerText = "";
+
+        const room = rooms[roomKey];
+        document.getElementById('scene-title').innerText = room.title;
+        document.getElementById('story').innerText = room.text;
+        
+        document.getElementById('image-container').innerHTML = room.image();
+        
+        const actionButtons = document.getElementById('action-buttons');
+        if (actionButtons) {
+            actionButtons.innerHTML = ''; 
+
+            room.choices.forEach(choice => {
+                if (!choice.condition || choice.condition()) {
+                    const btn = document.createElement('button');
+                    btn.className = `choice-btn ${choice.type}`;
+                    
+                    let prefix = choice.type === 'examine' ? '👀 Untersuche: ' : '▶ Gehe/Mache: ';
+                    if(choice.text.includes("Zurück")) prefix = '🔙 ';
+                    
+                    btn.innerText = prefix + choice.text;
+                    btn.onclick = choice.action;
+                    actionButtons.appendChild(btn);
+                }
+            });
+        }
+
+        document.getElementById('text-container').scrollTop = 0;
+        document.getElementById('choices-container').scrollTop = 0;
+    }
+
+    // --- SPIEL STARTEN ---
+    updateInventory();
+    showRoom('bar');
+
+</script>
+</body>
+</html>
