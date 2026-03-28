@@ -359,6 +359,8 @@
             if (currentRoom === 'sauna_tuer' && !state.saunaUnlocked) {
                 state.saunaUnlocked = true;
                 msg = "Der rostige Schlüssel knirscht, aber das Schloss springt auf!";
+            } else if (currentRoom === 'sauna_tuer' && state.saunaUnlocked) {
+                msg = "Das Schloss ist bereits offen, du brauchst den Schlüssel hier nicht mehr.";
             } else {
                 msg = "Der Schlüssel passt hier in kein Schlüsselloch.";
             }
@@ -367,6 +369,8 @@
             if (currentRoom === 'keller' && !state.barricadeBroken) {
                 state.barricadeBroken = true;
                 msg = "*KRRAAAACK!* Mit purer Hebelkraft reißst du die dicken Bretter ab. Der Weg ist frei!";
+            } else if (currentRoom === 'keller' && state.barricadeBroken) {
+                msg = "Die Bretter sind bereits zerstört. Der Weg ist frei.";
             } else {
                 msg = "Du schwingst das Brecheisen drohend, aber es hilft in dieser Situation nicht weiter.";
             }
@@ -375,6 +379,8 @@
             if (currentRoom === 'fitness' && !state.kellerUnlocked) {
                 state.kellerUnlocked = true;
                 msg = "*Biep Biep Biep - Klick!* Die schwere Luke am Boden des Fitnessraums schwingt auf und offenbart eine steile Eisentreppe.";
+            } else if (currentRoom === 'fitness' && state.kellerUnlocked) {
+                msg = "Die Luke ist bereits offen.";
             } else {
                 msg = "Du murmelst mathematische Nullstellen vor dich hin. Niemand reagiert.";
             }
@@ -399,6 +405,8 @@
             if (currentRoom === 'langer_gang' && !state.gangIlluminated) {
                 state.gangIlluminated = true;
                 msg = "*Klick*. Die Taschenlampe durchschneidet die Dunkelheit. Du siehst nun, worauf du trittst...";
+            } else if (currentRoom === 'langer_gang' && state.gangIlluminated) {
+                msg = "Die Taschenlampe leuchtet bereits hell und zeigt dir den Weg.";
             } else {
                 msg = "Du schaltest die Taschenlampe an und wieder aus. Klick. Klack.";
             }
@@ -407,8 +415,10 @@
             if (currentRoom === 'langer_gang' && !state.wearingSlippers) {
                 state.wearingSlippers = true;
                 msg = "Du tauschst deine harten Schuhe gegen die weichen Badeschlappen. Damit läufst du absolut lautlos wie ein Ninja.";
+            } else if (currentRoom === 'langer_gang' && state.wearingSlippers) {
+                msg = "Du hast die bequemen Slipper bereits an den Füßen.";
             } else {
-                msg = "Du hältst die flauschigen Slipper in der Hand. Sehr weich.";
+                msg = "Du hältst die flauschigen Slipper in der Hand. Sehr weich. Zieh sie am besten an, wenn du lautlos sein musst.";
             }
         }
         else if (itemId === 'bowlingball') {
@@ -805,15 +815,64 @@
                 <rect x="40" y="12" width="8" height="8" fill="#ffb74d" />
                 <rect x="38" y="20" width="12" height="16" fill="#4caf50" />
                 <rect x="25" y="25" width="39" height="11" fill="#5d4037" />
+                ${state.oldWomanAppeared ? '<circle cx="34" cy="18" r="3" fill="#ffb6c1" /><rect x="32" y="21" width="4" height="6" fill="#800080" />' : ''}
             </svg>`,
-            text: "DU HAST ES GESCHAFFT!\n\nDu stehst hinter dem Tresen der rustikalen Enzianhütte. Der Wirt schaut verdutzt, greift dann aber grinsend zur Flasche Zirbenschnaps. Du hast das finstere Geheimnis der Gemeinde Reith überlebt und alle Beweise (notgedrungen) vernichtet. Prost!",
+            text: () => {
+                if (state.oldWomanAppeared) {
+                    return "DU HAST ES GESCHAFFT!\n\nDu stehst in der rustikalen Enzianhütte. Plötzlich hat sich eine rüstige alte Frau zu euch an den Tresen gesellt. Sie behauptet lautstark, eine ehemalige Skirennläuferin zu sein, und schmettert ohrenbetäubende Tiroler Lieder. Die Konferenz ist definitiv beendet!";
+                } else {
+                    return "DU HAST ES GESCHAFFT!\n\nDu stehst hinter dem Tresen der rustikalen Enzianhütte. Der Wirt schaut verdutzt, greift dann aber grinsend zur Flasche Zirbenschnaps und zapft Bier. Du hast das finstere Geheimnis der Gemeinde Reith überlebt und alle Beweise (notgedrungen) vernichtet. Prost!";
+                }
+            },
             choices: [
                 { type: 'action', text: "Trinke einen Zirbenschnaps!", action: () => {
-                    state.beerCount++;
-                    showMessage(`Prost! Das war Schnaps Nummer ${state.beerCount}.`);
-                    if(state.beerCount > 4) {
-                        alert("Du hast das Spiel komplett durchgespielt (und bist betrunken). Zeit fürs Bett!");
-                        location.reload(); 
+                    if (state.oldWomanAppeared) {
+                        state.schnapsAfterWoman++;
+                        if (state.schnapsAfterWoman >= 4) {
+                            alert("Du hast das Spiel komplett durchgespielt (und bist sturzbetrunken). Zeit fürs Bett!");
+                            location.reload(); 
+                        } else {
+                            showMessage(`Prost! Die alte Frau singt weiter. (Weitere Schnäpse: ${state.schnapsAfterWoman}/4)`);
+                            showRoom('finale');
+                        }
+                    } else {
+                        state.schnapsCount++;
+                        if (state.schnapsCount >= 1 && state.bierCount >= 2 && !state.oldWomanAppeared) {
+                            state.oldWomanAppeared = true;
+                            showMessage("Eine alte Frau betritt die Hütte und steuert direkt auf euch zu!");
+                            showRoom('finale');
+                        } else if (state.schnapsCount >= 5) {
+                            alert("Du hast zu viel Schnaps getrunken und schläfst ein. Zeit fürs Bett!");
+                            location.reload();
+                        } else {
+                            showMessage(`Prost! (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier)`);
+                            showRoom('finale');
+                        }
+                    }
+                }},
+                { type: 'action', text: "Trinke ein frisches Bier!", action: () => {
+                    if (state.oldWomanAppeared) {
+                        state.bierAfterWoman++;
+                        if (state.bierAfterWoman >= 5) {
+                            alert("Du hast das Spiel komplett durchgespielt (und bist sturzbetrunken). Zeit fürs Bett!");
+                            location.reload(); 
+                        } else {
+                            showMessage(`Prost! Die alte Frau singt weiter. (Weitere Biere: ${state.bierAfterWoman}/5)`);
+                            showRoom('finale');
+                        }
+                    } else {
+                        state.bierCount++;
+                        if (state.schnapsCount >= 1 && state.bierCount >= 2 && !state.oldWomanAppeared) {
+                            state.oldWomanAppeared = true;
+                            showMessage("Eine alte Frau betritt die Hütte und steuert direkt auf euch zu!");
+                            showRoom('finale');
+                        } else if (state.bierCount >= 5) {
+                            alert("Du hast zu viel Bier getrunken und schläfst ein. Zeit fürs Bett!");
+                            location.reload();
+                        } else {
+                            showMessage(`Prost! (Bisher: ${state.schnapsCount} Schnaps, ${state.bierCount} Bier)`);
+                            showRoom('finale');
+                        }
                     }
                 }},
                 { type: 'action', text: "Spiel beenden und neu starten", action: () => location.reload() }
@@ -828,17 +887,19 @@
         invList.innerHTML = '';
         
         let items = [];
-        // Items verschwinden, sobald ihr Rätsel gelöst (Status = true) ist!
-        if (state.knowsCode && !state.kellerUnlocked) items.push({id: 'code', name: "🧠 Code: 0305"});
+        // Diese Items werden bei Benutzung NICHT verbraucht und bleiben dauerhaft im Inventar:
+        if (state.knowsCode) items.push({id: 'code', name: "🧠 Code: 0305"});
+        if (state.hasKey) items.push({id: 'key', name: "🔑 Messing-Schlüssel"});
+        if (state.hasCrowbar) items.push({id: 'crowbar', name: "🔧 Brecheisen"});
+        if (state.hasFlashlight) items.push({id: 'flashlight', name: "🔦 Taschenlampe"});
+        if (state.hasSlippers) items.push({id: 'slippers', name: "🩴 Badeschlappen"});
+
+        // Diese Items werden bei Benutzung "vernichtet" / verbraucht und verschwinden:
         if (state.hasNaOH && !state.acidNeutralized) items.push({id: 'naoh', name: "🧪 Natriumhydroxid"});
-        if (state.hasKey && !state.saunaUnlocked) items.push({id: 'key', name: "🔑 Messing-Schlüssel"});
-        if (state.hasCrowbar && !state.barricadeBroken) items.push({id: 'crowbar', name: "🔧 Brecheisen"});
         if (state.hasOil && !state.leverOiled) items.push({id: 'oil', name: "🛢️ Schmieröl"});
-        if (state.hasFlashlight && !state.gangIlluminated) items.push({id: 'flashlight', name: "🔦 Taschenlampe"});
-        if (state.hasAkte && !state.evidenceDestroyed) items.push({id: 'akte', name: "📁 Akte 'Gemeinde Reith'"});
         if (state.hasPen && !state.circuitBridged) items.push({id: 'pen', name: "✒️ Goldener Füller"});
-        if (state.hasSlippers && !state.wearingSlippers) items.push({id: 'slippers', name: "🩴 Badeschlappen"});
         if (state.hasBowlingball && !state.ladderLowered) items.push({id: 'bowlingball', name: "🎳 Bowlingkugel"});
+        if (state.hasAkte && !state.evidenceDestroyed) items.push({id: 'akte', name: "📁 Akte 'Gemeinde Reith'"});
 
         if (invCount) invCount.innerText = items.length;
 
