@@ -752,7 +752,7 @@
             tennishalle: {
                 title: "Die alte Tennishalle",
                 image: () => `<img src="${state.evidenceDestroyed ? 'tennishalle_tor_geoeffnet.jpg' : 'tennishalle.jpg'}" />`,
-                text: "Deine Slipper knirschen auf rotem Sand. Du bist in der Tennishalle! Auf der gegenüberliegenden Seite blockiert jedoch ein modernes, schweres Gittertor den Ausgang zur Enzianhütte.\n\nNeben dem Tor steht eine bizarre Maschine: Ein Aktenvernichter mit einem roten Scannerauge. Ein Schild besagt: 'Tor-Entriegelung nur bei vollständiger Vernichtung der Beweismittel'.",
+                text: "Deine Slipper knirschen auf rotem Sand. Du bist in der Tennishalle! Auf der gegenüberliegenden Seite blockiert jedoch ein modernes, schweres Gittertor den Ausgang.\n\nNeben dem Tor steht eine bizarre Maschine: Ein Aktenvernichter mit einem roten Scannerauge. Ein Schild besagt: 'Tor-Entriegelung nur bei vollständiger Vernichtung der Beweismittel'.",
                 choices: [
                     { type: 'action', text: "Öffne das entriegelte Tor und trete ins Licht!", condition: () => state.evidenceDestroyed, action: () => showRoom('finale') },
                     { type: 'action', text: "Zurück ins dunkle Loch", action: () => showRoom('leiter_loch') }
