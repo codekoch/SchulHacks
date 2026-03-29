@@ -718,7 +718,7 @@
                 image: () => `<img src="${state.gangIlluminated ? 'langer_gang_erleuchtet.png' : 'langer_gang_dunkel.png'}" />`,
                 text: state.gangIlluminated ?
                     "Im Licht der Taschenlampe erkennst du das Grauen: Der Boden des engen Tunnels ist komplett mit knochentrockenen Fledermauskadavern bedeckt. Tausende Fledermäuse hängen schlafend an der Decke. Jedes laute Knirschen wird sie aufwecken." :
-                    "Es ist absolute Finsternis. Der Geruch nach Ammoniak beißt in der Nase. Unter deinen Füßen fühlst du etwas Unangenehmes.",
+                    "Es herrscht absolute Finsternis. Der Geruch nach Ammoniak beißt in der Nase. Unter deinen Füßen fühlst du etwas Unangenehmes.",
                 choices: [
                     {
                         type: 'action', text: "Gehe blind weiter ins Dunkle", condition: () => !state.gangIlluminated, action: () => {
