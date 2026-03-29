@@ -700,7 +700,7 @@
                             showMessage("*Quiiietsch... RUMMS!* Die schwere Eisentür gleitet beiseite.");
                         }
                     },
-                    { type: 'action', text: "Gehe durch die Eisentür in die Tiefe", condition: () => state.doorToKellerOpen, action: () => showRoom('keller') },
+                    { type: 'action', text: "Gehe durch die Eisentür.", condition: () => state.doorToKellerOpen, action: () => showRoom('keller') },
                     { type: 'action', text: "Klettere die Leiter hoch zum Fitnessraum", action: () => showRoom('fitness') }
                 ]
             },
