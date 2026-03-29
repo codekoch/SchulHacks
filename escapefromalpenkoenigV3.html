@@ -492,7 +492,7 @@
         const rooms = {
             bar: {
                 title: "Die Hotelbar",
-                image: () => `<img src="${state.saunaUnlocked ? 'bar_nach_flucht.png' : 'Bar.png'}" />`,
+                image: () => `<img src="${state.saunaUnlocked ? 'bar_nach_flucht.jpg' : 'Bar.jpg'}" />`,
                 text: "Du stehst mit deiner Lehrergruppe an der Bar des 'Hotel Alpenkönig' in Seefeld. Der Skitag war sehr anstrengend, viele sind schon auf ihrem Zimmer, aber ihr wollt eigentlich nur noch in die Enzianhütte auf ein Bier.\n\nEin massiver Schneesturm blockiert allerdings den Haupteingang. Der mürrische Barkeeper poliert apathisch Gläser.",
                 choices: [
                     {
@@ -508,7 +508,7 @@
             },
             bierdeckel: {
                 title: "Der klebrige Bierdeckel",
-                image: () => `<img src="Bierdeckel.png" />`,
+                image: () => `<img src="Bierdeckel.jpg" />`,
                 text: "Jemand hat hastig Notizen hinterlassen:\n\n'PIN für den Zugang nach unten: f(x) = x² - 8x + 15. Die Nullstellen bilden den Code (Format: x1,x2 ohne Komma).'",
                 choices: [
                     {
@@ -524,7 +524,7 @@
             },
             flur: {
                 title: "Der dunkle Flur",
-                image: () => `<img src="flur.png" />`,
+                image: () => `<img src="flur.jpg" />`,
                 text: "Ein spärlich beleuchteter Flur. Viele Türen gehen von hier ab. Ein unbeaufsichtigter Reinigungswagen der Putzkolonne steht verlassen in der Ecke.",
                 choices: [
                     {
@@ -544,7 +544,7 @@
             },
             treppenhaus: {
                 title: "Zentrales Treppenhaus",
-                image: () => `<img src="treppenhaus.png" />`,
+                image: () => `<img src="treppenhaus.jpg" />`,
                 text: "Ein kaltes Betontreppenhaus. Nach oben geht es zu den noblen Suiten, unten riecht es seltsam süßlich und eher weniger nach Keller.",
                 choices: [
                     { type: 'action', text: "Gehe nach oben", action: () => showRoom('suite') },
@@ -554,7 +554,7 @@
             },
             suite: {
                 title: "Präsidentensuite",
-                image: () => `<img src="suite.png" />`,
+                image: () => `<img src="suite.jpg" />`,
                 text: "Die teuerste Suite des Hauses. Vergoldete Wasserhähne und Samtvorhänge. Auf dem massiven Schreibtisch liegen Dokumente. Das Hotelmanagement hat hier wohl überstürzt gepackt.",
                 choices: [
                     {
@@ -580,7 +580,7 @@
             },
             kegelbahn: {
                 title: "Die alte Kegelbahn",
-                image: () => `<img src="kegelbahn.png" />`,
+                image: () => `<img src="kegelbahn.jpg" />`,
                 text: "Du stehst in einer staubigen, stillgelegten Kegelbahn im Untergeschoss. Die hölzernen Bahnen sind verzogen. Am Kugelrücklauf liegt allerlei Gerümpel.",
                 choices: [
                     {
@@ -598,7 +598,7 @@
             },
             konferenz: {
                 title: "Konferenzraum 'Alpspitze'",
-                image: () => `<img src="${state.circuitBridged ? 'konferenz_offenes_hinterzimmer.png' : 'konferenz.png'}" />`,
+                image: () => `<img src="${state.circuitBridged ? 'konferenz_offenes_hinterzimmer.jpg' : 'konferenz.jpg'}" />`,
                 text: "Ein typischer, trister Tagungsraum. Flipcharts und ein langes Whiteboard an der Wand. Dir fällt auf, dass ein kalter Luftzug hinter dem Whiteboard hervorweht.",
                 choices: [
                     {
@@ -613,7 +613,7 @@
             },
             hinterzimmer: {
                 title: "Das verborgene Hinterzimmer",
-                image: () => `<img src="hinterzimmer.png" />`,
+                image: () => `<img src="hinterzimmer.jpg" />`,
                 text: "Ein extrem verstörender Raum. Der Boden ist mit alten, abgewetzten Zirkusmatten ausgelegt. In der Mitte steht ein metallener Gynäkologenstuhl mit Lederriemen. Wer auch immer hier verweilt hat... du willst ihn nicht kennen.",
                 choices: [
                     {
@@ -629,7 +629,7 @@
             },
             schwimmbad: {
                 title: "Das stillgelegte Schwimmbad",
-                image: () => `<img src="${!state.acidNeutralized ? 'schwimmbad.png' : (state.hasKey ? 'schwimmbad_neutralisierte_Saeure_ohne_Schluessel.png' : 'schwimmbad_neutralisierte_Saeure.png')}" />`,
+                image: () => `<img src="${!state.acidNeutralized ? 'schwimmbad.jpg' : (state.hasKey ? 'schwimmbad_neutralisierte_Saeure_ohne_Schluessel.jpg' : 'schwimmbad_neutralisierte_Saeure.jpg')}" />`,
                 text: "Die blauen Kacheln sind dreckig. Am tiefsten Punkt des leeren Beckens hat sich eine trübe, übelriechende Pfütze (pH 1 Entkalker) gebildet. Darin glänzt ein messingfarbener Schlüssel.",
                 choices: [
                     {
@@ -651,7 +651,7 @@
             },
             sauna_tuer: {
                 title: "Vor der Sauna",
-                image: () => `<img src="sauna.png" />`,
+                image: () => `<img src="sauna.jpg" />`,
                 text: "Die Tür aus massivem Holz ist mit einem verrosteten Vorhängeschloss verriegelt.",
                 choices: [
                     { type: 'action', text: "Zurück ins Treppenhaus", action: () => showRoom('treppenhaus') }
@@ -659,7 +659,7 @@
             },
             sauna_innen: {
                 title: "In der Sauna",
-                image: () => `<img src="${state.hasCrowbar ? 'sauna_innen_ohne_Brecheisen.png' : 'sauna_innen.png'}" />`,
+                image: () => `<img src="${state.hasCrowbar ? 'sauna_innen_ohne_Brecheisen.jpg' : 'sauna_innen.jpg'}" />`,
                 text: "Es ist eiskalt. Ganz hinten unter dem Steinofen klemmt etwas Rotes.",
                 choices: [
                     {
@@ -675,7 +675,7 @@
             },
             fitness: {
                 title: "Der Fitnessraum",
-                image: () => `<img src="${state.kellerUnlocked ? 'fitness_luke_geoeffnet.png' : 'fitness.png'}" />`,
+                image: () => `<img src="${state.kellerUnlocked ? 'fitness_luke_geoeffnet.jpg' : 'fitness.jpg'}" />`,
                 text: "Rostige Hanteln. Im Boden befindet sich eine quadratische, schwere Metallluke mit einem elektronischen Tastenfeld daneben.",
                 choices: [
                     { type: 'action', text: "Steige die geöffnete Luke hinab", condition: () => state.kellerUnlocked, action: () => showRoom('heizung') },
@@ -684,7 +684,7 @@
             },
             heizung: {
                 title: "Der Heizungskeller",
-                image: () => `<img src="${state.doorToKellerOpen ? 'heizung_tuer_offen.png' : 'heizung.png'}" />`,
+                image: () => `<img src="${state.doorToKellerOpen ? 'heizung_tuer_offen.jpg' : 'heizung.jpg'}" />`,
                 text: "Es ist unfassbar heiß hier. Riesige Kessel brummen. Mitten im Raum steht ein antiker Verhörstuhl mit dicken Lederriemen. Die Gemeinde Reith hat hier offenbar 'Sonderbefragungen' durchgeführt.\n\nAn der Wand ist eine gewaltige Eisentür, daneben ein völlig verrosteter Wandhebel.",
                 choices: [
                     {
@@ -700,13 +700,13 @@
                             showMessage("*Quiiietsch... RUMMS!* Die schwere Eisentür gleitet beiseite.");
                         }
                     },
-                    { type: 'action', text: "Gehe durch die Eisentür.", condition: () => state.doorToKellerOpen, action: () => showRoom('keller') },
+                    { type: 'action', text: "Gehe durch die Eisentür in die Tiefe", condition: () => state.doorToKellerOpen, action: () => showRoom('keller') },
                     { type: 'action', text: "Klettere die Leiter hoch zum Fitnessraum", action: () => showRoom('fitness') }
                 ]
             },
             keller: {
                 title: "Tiefe Kellergewölbe",
-                image: () => `<img src="${state.barricadeBroken ? 'keller_druchgang_offen.png' : 'keller.png'}" />`,
+                image: () => `<img src="${state.barricadeBroken ? 'keller_druchgang_offen.jpg' : 'keller.jpg'}" />`,
                 text: "Eine feuchte Tropfsteinhöhle tief im Fels. Ein Durchgang ist kreuz und quer mit dicken, nagelneuen Holzbrettern vernagelt.",
                 choices: [
                     { type: 'action', text: "Krieche durch die aufgebrochene Öffnung", condition: () => state.barricadeBroken, action: () => showRoom('langer_gang') },
@@ -715,10 +715,10 @@
             },
             langer_gang: {
                 title: "Der Fledermaus-Gang",
-                image: () => `<img src="${state.gangIlluminated ? 'langer_gang_erleuchtet.png' : 'langer_gang_dunkel.png'}" />`,
+                image: () => `<img src="${state.gangIlluminated ? 'langer_gang_erleuchtet.jpg' : 'langer_gang_dunkel.jpg'}" />`,
                 text: state.gangIlluminated ?
                     "Im Licht der Taschenlampe erkennst du das Grauen: Der Boden des engen Tunnels ist komplett mit knochentrockenen Fledermauskadavern bedeckt. Tausende Fledermäuse hängen schlafend an der Decke. Jedes laute Knirschen wird sie aufwecken." :
-                    "Es herrscht absolute Finsternis. Der Geruch nach Ammoniak beißt in der Nase. Unter deinen Füßen fühlst du etwas Unangenehmes.",
+                    "Es ist absolute Finsternis. Der Geruch nach Ammoniak beißt in der Nase. Unter deinen Füßen fühlst du etwas Unangenehmes.",
                 choices: [
                     {
                         type: 'action', text: "Gehe blind weiter ins Dunkle", condition: () => !state.gangIlluminated, action: () => {
@@ -742,7 +742,7 @@
             },
             leiter_loch: {
                 title: "Das Loch in der Wand",
-                image: () => `<img src="${state.ladderLowered ? 'leiter_loch_mit_leiter_hoch.png' : 'leiter_loch.png'}" />`,
+                image: () => `<img src="${state.ladderLowered ? 'leiter_loch_mit_leiter_hoch.jpg' : 'leiter_loch.jpg'}" />`,
                 text: "Am Ende des widerlichen Tunnels stehst vor einer Ziegelmauer mit einem großen Loch. Eine alte Holzleiter führt hinauf in das Loch, aber sie ist an einem Seilzug befestigt und hängt unerreichbar hoch in der Luft. An dem anderen Ende des Seils baumelt ein leerer Eimer.",
                 choices: [
                     { type: 'action', text: "Klettere die herabgelassene Leiter hoch", condition: () => state.ladderLowered, action: () => showRoom('tennishalle') },
@@ -751,8 +751,8 @@
             },
             tennishalle: {
                 title: "Die alte Tennishalle",
-                image: () => `<img src="${state.evidenceDestroyed ? 'tennishalle_tor_geoeffnet.png' : 'tennishalle.png'}" />`,
-                text: "Deine Slipper knirschen auf rotem Sand. Du bist in der Tennishalle! Auf der gegenüberliegenden Seite blockiert jedoch ein modernes, schweres Gittertor den Ausgang.\n\nNeben dem Tor steht eine bizarre Maschine: Ein Aktenvernichter mit einem roten Scannerauge. Ein Schild besagt: 'Tor-Entriegelung nur bei vollständiger Vernichtung der Beweismittel'.",
+                image: () => `<img src="${state.evidenceDestroyed ? 'tennishalle_tor_geoeffnet.jpg' : 'tennishalle.jpg'}" />`,
+                text: "Deine Slipper knirschen auf rotem Sand. Du bist in der Tennishalle! Auf der gegenüberliegenden Seite blockiert jedoch ein modernes, schweres Gittertor den Ausgang zur Enzianhütte.\n\nNeben dem Tor steht eine bizarre Maschine: Ein Aktenvernichter mit einem roten Scannerauge. Ein Schild besagt: 'Tor-Entriegelung nur bei vollständiger Vernichtung der Beweismittel'.",
                 choices: [
                     { type: 'action', text: "Öffne das entriegelte Tor und trete ins Licht!", condition: () => state.evidenceDestroyed, action: () => showRoom('finale') },
                     { type: 'action', text: "Zurück ins dunkle Loch", action: () => showRoom('leiter_loch') }
@@ -760,7 +760,7 @@
             },
             finale: {
                 title: "🍻 Die Enzianhütte 🍻",
-                image: () => `<img src="${state.oldWomanAppeared ? 'finale_mit_alter_frau.png' : 'finale.png'}" />`,
+                image: () => `<img src="${state.oldWomanAppeared ? 'finale_mit_alter_frau.jpg' : 'finale.jpg'}" />`,
                 text: () => {
                     if (state.oldWomanAppeared) {
                         return "DU HAST ES GESCHAFFT!\n\nDu stehst in der rustikalen Enzianhütte. Plötzlich hat sich eine rüstige alte Frau zu euch an den Tresen gesellt. Sie behauptet lautstark, eine ehemalige Skirennläuferin zu sein, und schmettert ohrenbetäubende Tiroler Lieder. Langsam wird es anstrengend...Manche von euch sind allerdings mehr im Fokus als andere.";
