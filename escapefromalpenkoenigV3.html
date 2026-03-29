@@ -663,7 +663,7 @@
                 text: "Es ist eiskalt. Ganz hinten unter dem Steinofen klemmt etwas Rotes.",
                 choices: [
                     {
-                        type: 'action', text: "Nimm das Brecheisen", condition: () => !state.hasCrowbar, action: () => {
+                        type: 'action', text: "Versuche das rote Ding herauszuholen.", condition: () => !state.hasCrowbar, action: () => {
                             state.hasCrowbar = true;
                             updateInventory();
                             showRoom('sauna_innen');
