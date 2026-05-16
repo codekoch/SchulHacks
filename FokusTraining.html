@@ -95,21 +95,16 @@
 
         .touch-zone {
             pointer-events: auto;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(2px);
+            background: transparent;
             display: flex;
-            align-items: center;
-            justify-content: center;
             font-size: 1.5rem;
             font-weight: bold;
-            color: rgba(255, 255, 255, 0.5);
-            transition: background 0.2s, opacity 0.2s;
-            text-align: center;
-            line-height: 1.2;
+            transition: background 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
         .touch-zone:active {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
         }
         
         .mode-btn { opacity: 0.5; transform: scale(0.9); }
@@ -180,16 +175,24 @@
         </div>
 
         <!-- Touch Controls for iPad/Mobile -->
-        <div id="touch-controls">
+        <div id="touch-controls" class="hidden">
             <!-- P1 Left Side -->
-            <div class="absolute left-0 top-0 w-32 md:w-40 h-full flex flex-col gap-2 p-2">
-                <div id="touch-p1-blue" class="touch-zone flex-1 rounded-xl border-2 text-blue-400 border-blue-500/30">A <br><br> ■</div>
-                <div id="touch-p1-yellow" class="touch-zone flex-1 rounded-xl border-2 text-yellow-400 border-yellow-500/30">D <br><br> ▲</div>
+            <div class="absolute left-0 top-0 w-1/2 h-full flex flex-col z-10">
+                <div id="touch-p1-blue" class="touch-zone flex-1 flex items-center justify-start pl-4 sm:pl-8">
+                    <div class="bg-slate-900/80 p-4 rounded-xl border-2 text-blue-400 border-blue-500/30 text-center pointer-events-none shadow-lg">A <br><br> ■</div>
+                </div>
+                <div id="touch-p1-yellow" class="touch-zone flex-1 flex items-center justify-start pl-4 sm:pl-8">
+                    <div class="bg-slate-900/80 p-4 rounded-xl border-2 text-yellow-400 border-yellow-500/30 text-center pointer-events-none shadow-lg">D <br><br> ▲</div>
+                </div>
             </div>
             <!-- P2 Right Side -->
-            <div class="absolute right-0 top-0 w-32 md:w-40 h-full flex flex-col gap-2 p-2" id="touch-p2-container">
-                <div id="touch-p2-blue" class="touch-zone flex-1 rounded-xl border-2 text-blue-400 border-blue-500/30">◀ <br><br> ■</div>
-                <div id="touch-p2-yellow" class="touch-zone flex-1 rounded-xl border-2 text-yellow-400 border-yellow-500/30">▶ <br><br> ▲</div>
+            <div class="absolute right-0 top-0 w-1/2 h-full flex flex-col z-10 hidden" id="touch-p2-container">
+                <div id="touch-p2-blue" class="touch-zone flex-1 flex items-center justify-end pr-4 sm:pr-8">
+                    <div class="bg-slate-900/80 p-4 rounded-xl border-2 text-blue-400 border-blue-500/30 text-center pointer-events-none shadow-lg">◀ <br><br> ■</div>
+                </div>
+                <div id="touch-p2-yellow" class="touch-zone flex-1 flex items-center justify-end pr-4 sm:pr-8">
+                    <div class="bg-slate-900/80 p-4 rounded-xl border-2 text-yellow-400 border-yellow-500/30 text-center pointer-events-none shadow-lg">▶ <br><br> ▲</div>
+                </div>
             </div>
         </div>
 
@@ -671,6 +674,7 @@
             uiMenu.classList.add('hidden');
             uiResults.classList.add('hidden');
             uiHud.classList.remove('hidden');
+            touchControls.classList.remove('hidden');
             
             // Reset Stats
             currentTrial = 0;
@@ -708,6 +712,7 @@
             gameState = STATE_RESULTS;
             uiHud.classList.add('hidden');
             uiResults.classList.remove('hidden');
+            touchControls.classList.add('hidden');
 
             const p1Avg = p1ReactionTimes.length > 0 ? p1ReactionTimes.reduce((a, b) => a + b) / p1ReactionTimes.length : 0;
             const p2Avg = p2ReactionTimes.length > 0 ? p2ReactionTimes.reduce((a, b) => a + b) / p2ReactionTimes.length : 0;
