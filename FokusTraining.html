@@ -145,9 +145,9 @@
                         <li>Schauen Sie <b>immer</b> auf das Kreuz in der Mitte.</li>
                         <li>Ignorieren Sie alle umherfliegenden Formen (auch blaue/gelbe!).</li>
                         <li>Nur wenn im <b>Zentrum</b> ein <b>blaues Quadrat</b> auftaucht: 
-                            <br><span class="text-blue-300">S1: Taste 'A' | S2: Pfeil LINKS</span> (oder obere Bildschirmhälfte am Rand)</li>
+                            <br><span id="rule-blue" class="text-blue-300">...</span></li>
                         <li>Nur wenn im <b>Zentrum</b> ein <b>gelbes Dreieck</b> auftaucht: 
-                            <br><span class="text-yellow-300">S1: Taste 'D' | S2: Pfeil RECHTS</span> (oder untere Bildschirmhälfte am Rand)</li>
+                            <br><span id="rule-yellow" class="text-yellow-300">...</span></li>
                     </ul>
                 </div>
 
@@ -178,21 +178,13 @@
         <div id="touch-controls" class="hidden">
             <!-- P1 Left Side -->
             <div class="absolute left-0 top-0 w-1/2 h-full flex flex-col z-10">
-                <div id="touch-p1-blue" class="touch-zone flex-1 flex items-center justify-start pl-4 sm:pl-8">
-                    <div class="bg-slate-900/80 p-4 rounded-xl border-2 text-blue-400 border-blue-500/30 text-center pointer-events-none shadow-lg">A <br><br> ■</div>
-                </div>
-                <div id="touch-p1-yellow" class="touch-zone flex-1 flex items-center justify-start pl-4 sm:pl-8">
-                    <div class="bg-slate-900/80 p-4 rounded-xl border-2 text-yellow-400 border-yellow-500/30 text-center pointer-events-none shadow-lg">D <br><br> ▲</div>
-                </div>
+                <div id="touch-p1-top" class="touch-zone flex-1 flex items-start justify-start p-4 sm:p-8"></div>
+                <div id="touch-p1-bottom" class="touch-zone flex-1 flex items-end justify-start p-4 sm:p-8"></div>
             </div>
             <!-- P2 Right Side -->
             <div class="absolute right-0 top-0 w-1/2 h-full flex flex-col z-10 hidden" id="touch-p2-container">
-                <div id="touch-p2-blue" class="touch-zone flex-1 flex items-center justify-end pr-4 sm:pr-8">
-                    <div class="bg-slate-900/80 p-4 rounded-xl border-2 text-blue-400 border-blue-500/30 text-center pointer-events-none shadow-lg">◀ <br><br> ■</div>
-                </div>
-                <div id="touch-p2-yellow" class="touch-zone flex-1 flex items-center justify-end pr-4 sm:pr-8">
-                    <div class="bg-slate-900/80 p-4 rounded-xl border-2 text-yellow-400 border-yellow-500/30 text-center pointer-events-none shadow-lg">▶ <br><br> ▲</div>
-                </div>
+                <div id="touch-p2-top" class="touch-zone flex-1 flex items-start justify-end p-4 sm:p-8"></div>
+                <div id="touch-p2-bottom" class="touch-zone flex-1 flex items-end justify-end p-4 sm:p-8"></div>
             </div>
         </div>
 
@@ -240,6 +232,12 @@
         const TOTAL_TRIALS = 10;
         const STIMULUS_SQUARE = 'SQUARE'; 
         const STIMULUS_TRIANGLE = 'TRIANGLE';
+
+        // Key Mappings (werden dynamisch gemischt)
+        let p1SquareKey = 'a';
+        let p1TriangleKey = 'd';
+        let p2SquareKey = 'ArrowLeft';
+        let p2TriangleKey = 'ArrowRight';
 
         // Game Variables
         let gameState = STATE_MENU;
@@ -750,32 +748,110 @@
             if (gameState === STATE_MENU || gameState === STATE_RESULTS) return;
             
             // Player 1
-            if (e.key.toLowerCase() === 'a') handleInput(1, STIMULUS_SQUARE);
-            if (e.key.toLowerCase() === 'd') handleInput(1, STIMULUS_TRIANGLE);
+            if (e.key.toLowerCase() === p1SquareKey) handleInput(1, STIMULUS_SQUARE);
+            if (e.key.toLowerCase() === p1TriangleKey) handleInput(1, STIMULUS_TRIANGLE);
             
             // Player 2 (or alternative for 1P)
-            if (e.key === 'ArrowLeft') handleInput(is2Player ? 2 : 1, STIMULUS_SQUARE);
-            if (e.key === 'ArrowRight') handleInput(is2Player ? 2 : 1, STIMULUS_TRIANGLE);
+            if (e.key === p2SquareKey) handleInput(is2Player ? 2 : 1, STIMULUS_SQUARE);
+            if (e.key === p2TriangleKey) handleInput(is2Player ? 2 : 1, STIMULUS_TRIANGLE);
         });
 
         // Button Event Listeners
         document.getElementById('start-btn').addEventListener('click', startGame);
-        document.getElementById('restart-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            // Zurück ins Hauptmenü, um neue Steuerung zu zeigen
+            gameState = STATE_MENU;
+            uiResults.classList.add('hidden');
+            uiMenu.classList.remove('hidden');
+            randomizeControls();
+        });
         
-        // Touch controls setup helper
-        function bindTouch(id, player, type) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(player, type); });
-            el.addEventListener('mousedown', (e) => { e.preventDefault(); handleInput(player, type); });
+        // Mapping Logic (Tastenbelegung würfeln)
+        function randomizeControls() {
+            // P1: Zufällig entscheiden, ob 'A' Quadrat oder Dreieck ist
+            if (Math.random() > 0.5) {
+                p1SquareKey = 'a'; p1TriangleKey = 'd';
+            } else {
+                p1SquareKey = 'd'; p1TriangleKey = 'a';
+            }
+
+            // P2: Zufällig entscheiden, ob 'Pfeil Links' Quadrat oder Dreieck ist
+            if (Math.random() > 0.5) {
+                p2SquareKey = 'ArrowLeft'; p2TriangleKey = 'ArrowRight';
+            } else {
+                p2SquareKey = 'ArrowRight'; p2TriangleKey = 'ArrowLeft';
+            }
+
+            updateUIForControls();
         }
 
-        // Bind the large edge touch zones
-        bindTouch('touch-p1-blue', 1, STIMULUS_SQUARE);
-        bindTouch('touch-p1-yellow', 1, STIMULUS_TRIANGLE);
+        function updateUIForControls() {
+            // 1. Menü-Texte updaten
+            const p1SqKey = p1SquareKey.toUpperCase();
+            const p1SqTouch = p1SquareKey === 'a' ? 'Hälfte Oben' : 'Hälfte Unten';
+            const p2SqKey = p2SquareKey === 'ArrowLeft' ? 'LINKS' : 'RECHTS';
+            const p2SqTouch = p2SquareKey === 'ArrowLeft' ? 'Hälfte Oben' : 'Hälfte Unten';
+            
+            const p1TrKey = p1TriangleKey.toUpperCase();
+            const p1TrTouch = p1TriangleKey === 'a' ? 'Hälfte Oben' : 'Hälfte Unten';
+            const p2TrKey = p2TriangleKey === 'ArrowLeft' ? 'LINKS' : 'RECHTS';
+            const p2TrTouch = p2TriangleKey === 'ArrowLeft' ? 'Hälfte Oben' : 'Hälfte Unten';
+            
+            document.getElementById('rule-blue').innerHTML = 
+                `S1: Taste '${p1SqKey}' (${p1SqTouch}) | S2: Pfeil ${p2SqKey} (${p2SqTouch})`;
+            document.getElementById('rule-yellow').innerHTML = 
+                `S1: Taste '${p1TrKey}' (${p1TrTouch}) | S2: Pfeil ${p2TrKey} (${p2TrTouch})`;
+
+            // 2. Touch-Zonen updaten (Optik)
+            const styleBlue = "bg-slate-900/80 p-4 rounded-xl border-2 text-blue-400 border-blue-500/30 text-center pointer-events-none shadow-lg";
+            const styleYellow = "bg-slate-900/80 p-4 rounded-xl border-2 text-yellow-400 border-yellow-500/30 text-center pointer-events-none shadow-lg";
+            
+            // P1 Left Side (Top=A, Bottom=D)
+            document.getElementById('touch-p1-top').innerHTML = p1SquareKey === 'a' 
+                ? `<div class="${styleBlue}">A <br><br> ■</div>` : `<div class="${styleYellow}">A <br><br> ▲</div>`;
+            document.getElementById('touch-p1-bottom').innerHTML = p1SquareKey === 'd' 
+                ? `<div class="${styleBlue}">D <br><br> ■</div>` : `<div class="${styleYellow}">D <br><br> ▲</div>`;
+                
+            // P2 Right Side (Top=ArrowLeft, Bottom=ArrowRight)
+            document.getElementById('touch-p2-top').innerHTML = p2SquareKey === 'ArrowLeft' 
+                ? `<div class="${styleBlue}">◀ <br><br> ■</div>` : `<div class="${styleYellow}">◀ <br><br> ▲</div>`;
+            document.getElementById('touch-p2-bottom').innerHTML = p2SquareKey === 'ArrowRight' 
+                ? `<div class="${styleBlue}">▶ <br><br> ■</div>` : `<div class="${styleYellow}">▶ <br><br> ▲</div>`;
+        }
+
+        // Initiale Randomisierung beim ersten Laden der Seite
+        randomizeControls();
+
+        // Touch controls setup helper
+        function bindTouch(id, player, isTop) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            
+            const handleTouch = (e) => {
+                e.preventDefault(); // Verhindert Doppelauslösung durch gleichzeitiges Mouse-Event
+                let type;
+                if (player === 1) {
+                    // Die obere Zone ist intern immer 'A', die untere immer 'D' gebunden
+                    const keyForThisZone = isTop ? 'a' : 'd';
+                    type = (p1SquareKey === keyForThisZone) ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
+                } else {
+                    // Die obere Zone ist immer Pfeil Links, die untere Pfeil Rechts
+                    const keyForThisZone = isTop ? 'ArrowLeft' : 'ArrowRight';
+                    type = (p2SquareKey === keyForThisZone) ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
+                }
+                handleInput(player, type);
+            };
+
+            el.addEventListener('touchstart', handleTouch);
+            el.addEventListener('mousedown', handleTouch);
+        }
+
+        // Bind the large edge touch zones dynamisch
+        bindTouch('touch-p1-top', 1, true);
+        bindTouch('touch-p1-bottom', 1, false);
         
-        bindTouch('touch-p2-blue', 2, STIMULUS_SQUARE);
-        bindTouch('touch-p2-yellow', 2, STIMULUS_TRIANGLE);
+        bindTouch('touch-p2-top', 2, true);
+        bindTouch('touch-p2-bottom', 2, false);
 
     </script>
 </body>
