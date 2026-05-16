@@ -100,10 +100,6 @@
         </div>
     </div>
 
-    <!-- Feedback Layer -->
-    <div id="feedback-p1" class="absolute top-1/4 left-1/4 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold opacity-0 transition-opacity duration-200 pointer-events-none z-30 drop-shadow-md"></div>
-    <div id="feedback-p2" class="absolute top-1/4 left-3/4 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold opacity-0 transition-opacity duration-200 pointer-events-none z-30 drop-shadow-md"></div>
-
     <script>
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
@@ -166,6 +162,7 @@
 
         let particles = [];
         let wanderer = null;
+        let activeFeedback = { p1: null, p2: null };
 
         // --- Klassen & Logik ---
 
@@ -395,6 +392,7 @@
             touchLayer.classList.remove('hidden'); // Touchzonen aktivieren
             statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0 };
             statsP2 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0 };
+            activeFeedback = { p1: null, p2: null };
             currentTrial = 0;
             particles = [];
             for (let i=0; i<25; i++) particles.push(createParticle());
@@ -460,11 +458,9 @@
         }
 
         function showFeedback(player, text, color = '#f87171') {
-            const el = document.getElementById(player === 1 ? 'feedback-p1' : 'feedback-p2');
-            el.textContent = text;
-            el.style.color = color;
-            el.style.opacity = 1;
-            setTimeout(() => { el.style.opacity = 0; }, 800);
+            const fb = { text, color, expires: performance.now() + 1000 };
+            if (player === 1) activeFeedback.p1 = fb;
+            else activeFeedback.p2 = fb;
         }
 
         function handleInput(player, type) {
@@ -668,6 +664,35 @@
                     }
                 }
             }
+            
+            // Draw Feedback on Canvas
+            const now = performance.now();
+            ctx.font = "bold 28px sans-serif";
+            ctx.textAlign = "center";
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#0f172a';
+
+            if (activeFeedback.p1 && now < activeFeedback.p1.expires) {
+                let alpha = Math.min(1, (activeFeedback.p1.expires - now) / 300);
+                ctx.globalAlpha = Math.max(0, alpha);
+                ctx.fillStyle = activeFeedback.p1.color;
+                let x = is2Player ? canvas.width * 0.25 : canvas.width / 2;
+                let y = canvas.height / 2 - 80;
+                ctx.strokeText(activeFeedback.p1.text, x, y);
+                ctx.fillText(activeFeedback.p1.text, x, y);
+            }
+            
+            if (is2Player && activeFeedback.p2 && now < activeFeedback.p2.expires) {
+                let alpha = Math.min(1, (activeFeedback.p2.expires - now) / 300);
+                ctx.globalAlpha = Math.max(0, alpha);
+                ctx.fillStyle = activeFeedback.p2.color;
+                let x = canvas.width * 0.75;
+                let y = canvas.height / 2 - 80;
+                ctx.strokeText(activeFeedback.p2.text, x, y);
+                ctx.fillText(activeFeedback.p2.text, x, y);
+            }
+            ctx.globalAlpha = 1.0;
+
             requestAnimationFrame(gameLoop);
         }
 
