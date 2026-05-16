@@ -13,7 +13,9 @@
             background-color: #0f172a;
             color: white;
             overflow: hidden;
-            touch-action: none; /* Prevent scrolling on mobile during gameplay */
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         #game-container {
@@ -45,7 +47,8 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            pointer-events: none; /* Let clicks pass through to canvas/buttons */
+            pointer-events: none; 
+            z-index: 50;
         }
 
         .panel {
@@ -56,7 +59,7 @@
             border-radius: 1rem;
             text-align: center;
             pointer-events: auto;
-            max-width: 500px;
+            max-width: 600px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             animation: fadeIn 0.3s ease-out;
         }
@@ -84,21 +87,19 @@
             transform: translateY(1px);
         }
 
-        /* Touch controls for iPads/Tablets */
         .touch-zone {
             pointer-events: auto;
             background: transparent;
             display: flex;
             font-size: 1.5rem;
             font-weight: bold;
-            transition: background 0.2s;
+            transition: background 0.1s;
             -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none; /* Verhindert Wischen/Zoomen auf dem iPad */
+            touch-action: none;
         }
-        .touch-zone:active {
-            background: rgba(255, 255, 255, 0.08);
+        
+        .touch-zone:active, .touch-zone.active-tap {
+            background: rgba(255, 255, 255, 0.05);
         }
         
         .mode-btn { opacity: 0.5; transform: scale(0.9); }
@@ -120,8 +121,8 @@
         <!-- Main Menu -->
         <div id="ui-menu" class="ui-layer">
             <div class="panel">
-                <h1 class="text-3xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Fokus-Wächter</h1>
-                <p class="mb-4 text-slate-300">Trainieren Sie Ihre verdeckte Aufmerksamkeit und Impulskontrolle.</p>
+                <h1 class="text-3xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Fokus-Wächter</h1>
+                <p class="mb-4 text-slate-300">Wissenschaftliches Aufmerksamkeits- & Inhibitionstraining.</p>
                 
                 <div class="flex gap-4 justify-center mb-4">
                     <button id="btn-1p" class="btn mode-btn active">1 Spieler</button>
@@ -130,36 +131,34 @@
 
                 <div class="text-left bg-slate-800/50 p-4 rounded-lg mb-6 text-sm text-slate-200">
                     <h3 class="font-bold text-white mb-2">Spielregeln:</h3>
-                    <ul class="list-disc pl-5 space-y-1">
-                        <li>Schauen Sie <b>immer</b> auf das Kreuz in der Mitte.</li>
-                        <li>Ignorieren Sie alle umherfliegenden Formen (auch blaue/gelbe!).</li>
-                        <li>Nur wenn im <b>Zentrum</b> ein <b>blaues Quadrat</b> auftaucht: 
-                            <br><span id="rule-blue" class="text-blue-300">...</span></li>
-                        <li>Nur wenn im <b>Zentrum</b> ein <b>gelbes Dreieck</b> auftaucht: 
-                            <br><span id="rule-yellow" class="text-yellow-300">...</span></li>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li>Schauen Sie <b>immer</b> auf das Kreuz in der Mitte. Ignorieren Sie fliegende Objekte.</li>
+                        <li>Wenn im Zentrum ein <b>blaues Quadrat</b> erscheint: <br><span id="rule-blue" class="text-blue-300 font-mono bg-black/30 px-2 py-1 rounded mt-1 inline-block">...</span></li>
+                        <li>Wenn im Zentrum ein <b>gelbes Dreieck</b> erscheint: <br><span id="rule-yellow" class="text-yellow-300 font-mono bg-black/30 px-2 py-1 rounded mt-1 inline-block">...</span></li>
+                        <li class="text-red-300 mt-2"><b>NEU (Impulskontrolle):</b> Wenn ein <b>ROTER KREIS, GELBES QUADRAT oder BLAUES DREIECK</b> erscheint, dürfen Sie <b>NICHTS</b> drücken!</li>
                     </ul>
                 </div>
 
-                <button id="start-btn" class="btn">Training Starten (10 Runden)</button>
+                <button id="start-btn" class="btn">Training Starten (15 Runden)</button>
             </div>
         </div>
 
         <!-- In-Game HUD -->
         <div id="ui-hud" class="ui-layer hidden">
             <div class="absolute top-4 left-4 text-slate-400 font-bold tracking-wider">
-                RUNDE: <span id="hud-round" class="text-white">1/10</span>
+                RUNDE: <span id="hud-round" class="text-white">1/15</span>
             </div>
             
             <!-- Player 1 Feedback -->
             <div id="feedback-p1" class="absolute top-1/3 left-1/4 transform -translate-x-1/2 -translate-y-1/2 text-3xl font-bold transition-opacity duration-300 opacity-0 text-center">
-                <span class="text-sm text-slate-400 block">S1</span>
-                <span class="msg">Gut!</span>
+                <span class="text-sm text-slate-400 block mb-1">Spieler 1</span>
+                <span class="msg bg-black/50 px-4 py-2 rounded-xl backdrop-blur-sm">Gut!</span>
             </div>
             
             <!-- Player 2 Feedback -->
             <div id="feedback-p2" class="absolute top-1/3 right-1/4 transform translate-x-1/2 -translate-y-1/2 text-3xl font-bold transition-opacity duration-300 opacity-0 text-center hidden">
-                <span class="text-sm text-slate-400 block">S2</span>
-                <span class="msg">Gut!</span>
+                <span class="text-sm text-slate-400 block mb-1">Spieler 2</span>
+                <span class="msg bg-black/50 px-4 py-2 rounded-xl backdrop-blur-sm">Gut!</span>
             </div>
         </div>
 
@@ -167,29 +166,29 @@
         <div id="touch-controls" class="hidden absolute top-0 left-0 w-full h-full z-20 pointer-events-none flex flex-row">
             <!-- P1 Left Side -->
             <div class="relative w-1/2 h-full flex flex-col z-10">
-                <div id="touch-p1-top" class="touch-zone flex-1 flex items-start justify-start p-4 sm:p-8"></div>
-                <div id="touch-p1-bottom" class="touch-zone flex-1 flex items-end justify-start p-4 sm:p-8"></div>
+                <div id="touch-p1-top" class="touch-zone flex-1 flex items-start justify-start p-2 sm:p-6"></div>
+                <div id="touch-p1-bottom" class="touch-zone flex-1 flex items-end justify-start p-2 sm:p-6"></div>
             </div>
             <!-- P2 Right Side -->
             <div class="relative w-1/2 h-full flex flex-col z-10 hidden" id="touch-p2-container">
-                <div id="touch-p2-top" class="touch-zone flex-1 flex items-start justify-end p-4 sm:p-8"></div>
-                <div id="touch-p2-bottom" class="touch-zone flex-1 flex items-end justify-end p-4 sm:p-8"></div>
+                <div id="touch-p2-top" class="touch-zone flex-1 flex items-start justify-end p-2 sm:p-6"></div>
+                <div id="touch-p2-bottom" class="touch-zone flex-1 flex items-end justify-end p-2 sm:p-6"></div>
             </div>
         </div>
 
         <!-- Game Over / Results -->
         <div id="ui-results" class="ui-layer hidden">
             <div class="panel" style="max-width: 800px; width: 90%;">
-                <h2 class="text-3xl font-bold mb-2 text-white">Auswertung</h2>
-                <p class="mb-6 text-slate-300">Reaktionszeiten und Fehlerquote:</p>
+                <h2 class="text-3xl font-bold mb-2 text-white">Wissenschaftliche Auswertung</h2>
+                <p class="mb-6 text-slate-300">Reaktionszeiten und Inhibitionskontrolle:</p>
                 
                 <div id="results-container" class="flex flex-col md:flex-row gap-4 mb-6 justify-center">
-                    <!-- Dynamic injection based on 1P/2P mode -->
+                    <!-- Dynamic injection -->
                 </div>
 
                 <p id="result-evaluation" class="mb-6 italic text-slate-300 text-sm">...</p>
 
-                <button id="restart-btn" class="btn">Erneut versuchen</button>
+                <button id="restart-btn" class="btn">Neuer Test (Tasten werden gemischt)</button>
             </div>
         </div>
     </div>
@@ -198,7 +197,6 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // UI Elements
         const uiMenu = document.getElementById('ui-menu');
         const uiHud = document.getElementById('ui-hud');
         const uiResults = document.getElementById('ui-results');
@@ -218,49 +216,39 @@
         const STATE_FEEDBACK = 3; 
         const STATE_RESULTS = 4;
 
-        const TOTAL_TRIALS = 10;
+        const TOTAL_TRIALS = 15; // Increased for No-Go trials
         const STIMULUS_SQUARE = 'SQUARE'; 
         const STIMULUS_TRIANGLE = 'TRIANGLE';
+        const STIMULUS_NOGO = 'NOGO'; // The new Impulse Control trial
 
-        // Key Mappings (werden dynamisch gemischt)
+        // Key Mappings
         let p1SquareKey = 'a';
         let p1TriangleKey = 'd';
         let p2SquareKey = 'ArrowLeft';
         let p2TriangleKey = 'ArrowRight';
 
-        // Game Variables
         let gameState = STATE_MENU;
         let is2Player = false;
         let currentTrial = 0;
         
-        // Player 1 Stats
-        let p1ReactionTimes = [];
-        let p1Errors = 0;
-        let p1BestTime = 9999;
-        let p1Responded = false;
-
-        // Player 2 Stats
-        let p2ReactionTimes = [];
-        let p2Errors = 0;
-        let p2BestTime = 9999;
-        let p2Responded = false;
+        // Stats Objects for cleaner code
+        let p1Stats = { times: [], errors: 0, falseAlarms: 0, best: 9999, responded: false };
+        let p2Stats = { times: [], errors: 0, falseAlarms: 0, best: 9999, responded: false };
         
         let stimulusTimer = null;
         let timeStimulusShown = 0;
         let currentTargetType = null;
+        let currentNoGoType = 0;
 
-        let lastFrameTime = 0;
-        
-        // Entities
         let particles = [];
         let wanderer = null;
 
-        // Mode Selection Logic
+        // UI Mode Selection
         document.getElementById('btn-1p').addEventListener('click', () => {
             is2Player = false;
             document.getElementById('btn-1p').classList.add('active');
             document.getElementById('btn-2p').classList.remove('active');
-            touchP2Container.classList.add('hidden'); // Hide P2 controls
+            touchP2Container.classList.add('hidden');
             feedbackP2.classList.add('hidden');
         });
         document.getElementById('btn-2p').addEventListener('click', () => {
@@ -271,110 +259,74 @@
             feedbackP2.classList.remove('hidden');
         });
 
-        // Resize Canvas to fit nicely but maintain aspect ratio for fairness
         function resizeCanvas() {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            // Use window size directly for full immersion
-            canvas.width = w;
-            canvas.height = h;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
         class Particle {
-            constructor() {
-                this.reset();
-            }
+            constructor() { this.reset(); }
             reset() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                
-                // Intense Distractors: 20% chance to be exactly as large as the target/wanderer
                 this.isLarge = Math.random() > 0.8;
                 this.size = this.isLarge ? 15 : Math.random() * 4 + 2;
-                
-                // Larger ones move faster and more aggressively
                 this.vx = (Math.random() - 0.5) * (this.isLarge ? 4 : 2);
                 this.vy = (Math.random() - 0.5) * (this.isLarge ? 4 : 2);
                 this.life = Math.random() * 100 + 50;
                 this.maxLife = this.life;
                 
-                // Shapes to mimic the actual targets (Decoys)
                 const shapes = ['CIRCLE', 'SQUARE', 'TRIANGLE'];
                 this.shape = shapes[Math.floor(Math.random() * shapes.length)];
-
-                // Decoy colors included directly
                 const colors = ['#f43f5e', '#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#eab308'];
                 this.color = colors[Math.floor(Math.random() * colors.length)];
                 
-                // Flashing/Blinking effect for high distraction
                 this.blinkSpeed = Math.random() > 0.7 ? Math.random() * 0.2 + 0.1 : 0;
                 this.blinkPhase = Math.random() * Math.PI * 2;
             }
             update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life--;
-
-                // Screen wrap
+                this.x += this.vx; this.y += this.vy; this.life--;
                 if (this.x < 0) this.x = canvas.width;
                 if (this.x > canvas.width) this.x = 0;
                 if (this.y < 0) this.y = canvas.height;
                 if (this.y > canvas.height) this.y = 0;
-
                 if (this.life <= 0) this.reset();
             }
             draw(ctx) {
                 let alpha = (this.life / this.maxLife) * 0.6;
-                if (this.blinkSpeed > 0) {
-                    alpha *= (Math.sin(this.blinkPhase += this.blinkSpeed) * 0.5 + 0.5);
-                }
-                
+                if (this.blinkSpeed > 0) alpha *= (Math.sin(this.blinkPhase += this.blinkSpeed) * 0.5 + 0.5);
                 ctx.globalAlpha = alpha;
                 ctx.fillStyle = this.color;
                 
                 if (this.shape === 'CIRCLE') {
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
                 } else if (this.shape === 'SQUARE') {
                     ctx.fillRect(this.x - this.size, this.y - this.size, this.size * 2, this.size * 2);
                 } else if (this.shape === 'TRIANGLE') {
-                    ctx.beginPath();
-                    ctx.moveTo(this.x, this.y - this.size);
+                    ctx.beginPath(); ctx.moveTo(this.x, this.y - this.size);
                     ctx.lineTo(this.x + this.size, this.y + this.size);
                     ctx.lineTo(this.x - this.size, this.y + this.size);
-                    ctx.closePath();
-                    ctx.fill();
+                    ctx.closePath(); ctx.fill();
                 }
-                
                 ctx.globalAlpha = 1.0;
             }
         }
 
         class Wanderer {
-            constructor() {
-                this.reset();
-            }
+            constructor() { this.reset(); }
             reset() {
-                this.x = canvas.width / 2;
-                this.y = canvas.height / 2;
-                this.baseX = canvas.width / 2;
-                this.baseY = canvas.height / 2;
+                this.x = canvas.width / 2; this.y = canvas.height / 2;
+                this.baseX = canvas.width / 2; this.baseY = canvas.height / 2;
                 this.size = 15;
                 this.angle = Math.random() * Math.PI * 2;
                 this.speed = 2 + Math.random() * 3;
                 this.active = false;
-                this.pulse = 0;
-                this.tick = 0;
-                this.radius = 0;
+                this.pulse = 0; this.tick = 0; this.radius = 0;
                 
-                // Zufälliges Bewegungsmuster auswählen
                 const patterns = ['LINEAR', 'SPIRAL', 'SINE', 'ZIGZAG', 'ORBIT'];
                 this.pattern = patterns[Math.floor(Math.random() * patterns.length)];
-                
-                // Rotationsgeschwindigkeit für Spirale/Orbit (Zufällig links- oder rechtsherum)
                 this.angleSpeed = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 0.03 + 0.02);
             }
             spawn() {
@@ -383,49 +335,34 @@
             }
             update() {
                 if (!this.active) return;
-                
-                this.pulse += 0.1;
-                this.tick++;
+                this.pulse += 0.1; this.tick++;
 
-                // Bewegungsmuster anwenden
                 switch(this.pattern) {
                     case 'LINEAR':
-                        // Leichte Variation in der geraden Linie
                         this.angle += (Math.random() - 0.5) * 0.05;
                         this.x += Math.cos(this.angle) * this.speed;
                         this.y += Math.sin(this.angle) * this.speed;
                         break;
-                        
                     case 'SPIRAL':
-                        // Spirale: Radius wächst stetig, Winkel dreht sich
                         this.radius += this.speed * 0.4;
                         this.angle += this.angleSpeed;
                         this.x = this.baseX + Math.cos(this.angle) * this.radius;
                         this.y = this.baseY + Math.sin(this.angle) * this.radius;
                         break;
-                        
                     case 'SINE':
-                        // Schlangenlinie (Sinuskurve entlang eines Vektors)
                         let moveX = Math.cos(this.angle) * this.speed * this.tick;
                         let moveY = Math.sin(this.angle) * this.speed * this.tick;
-                        let perpAngle = this.angle + Math.PI / 2; // Senkrecht zur Bewegungsrichtung
-                        let amplitude = 80; // Auslenkung der Kurve
-                        let osc = Math.sin(this.tick * 0.05) * amplitude;
+                        let perpAngle = this.angle + Math.PI / 2; 
+                        let osc = Math.sin(this.tick * 0.05) * 80;
                         this.x = this.baseX + moveX + Math.cos(perpAngle) * osc;
                         this.y = this.baseY + moveY + Math.sin(perpAngle) * osc;
                         break;
-                        
                     case 'ZIGZAG':
-                        // Zickzack: Alle 45 Frames (ca. 0,7s) scharfe Richtungsänderung
-                        if (this.tick % 45 === 0) {
-                            this.angle += (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 2.5);
-                        }
+                        if (this.tick % 45 === 0) this.angle += (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 2.5);
                         this.x += Math.cos(this.angle) * this.speed;
                         this.y += Math.sin(this.angle) * this.speed;
                         break;
-                        
                     case 'ORBIT':
-                        // Kreist um das Zentrum mit leicht pulsierendem Radius
                         this.angle += this.angleSpeed;
                         this.radius = 150 + Math.sin(this.tick * 0.02) * 80;
                         this.x = this.baseX + Math.cos(this.angle) * this.radius;
@@ -433,110 +370,77 @@
                         break;
                 }
 
-                // Wenn er zu weit aus dem Bild fliegt, neu spawnen lassen
-                // Großzügiger Rand, damit z.B. weite Orbits nicht sofort abgebrochen werden
                 if (this.x < -200 || this.x > canvas.width + 200 || this.y < -200 || this.y > canvas.height + 200) {
-                    this.reset();
-                    this.active = true; // Sofort mit neuem Muster aus der Mitte starten
+                    this.reset(); this.active = true;
                 }
             }
             draw(ctx) {
                 if (!this.active) return;
-                
-                // The wanderer is extremely high contrast to force the eyes to want to look at it
                 const pulseSize = this.size + Math.sin(this.pulse) * 5;
-                
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = '#ef4444';
+                ctx.shadowBlur = 20; ctx.shadowColor = '#ef4444';
                 ctx.fillStyle = '#ef4444';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, pulseSize, 0, Math.PI * 2);
-                ctx.fill();
-                
+                ctx.beginPath(); ctx.arc(this.x, this.y, pulseSize, 0, Math.PI * 2); ctx.fill();
                 ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, pulseSize * 0.4, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.shadowBlur = 0; // reset
+                ctx.beginPath(); ctx.arc(this.x, this.y, pulseSize * 0.4, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 0;
             }
         }
 
-        // Initialize entities
-        for (let i = 0; i < 50; i++) {
-            particles.push(new Particle());
-        }
+        for (let i = 0; i < 50; i++) particles.push(new Particle());
         wanderer = new Wanderer();
 
         function drawCenterFixation() {
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
 
-            // Draw a subtle focus ring
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
             ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(cx, cy, 40, 0, Math.PI * 2);
-            ctx.stroke();
+            ctx.beginPath(); ctx.arc(cx, cy, 40, 0, Math.PI * 2); ctx.stroke();
 
-            // Draw content based on state
             if (gameState === STATE_STIMULUS) {
-                // Draw the actual target stimulus
                 if (currentTargetType === STIMULUS_SQUARE) {
-                    ctx.fillStyle = '#3b82f6'; // Blue
-                    ctx.shadowBlur = 15;
-                    ctx.shadowColor = '#3b82f6';
+                    ctx.fillStyle = '#3b82f6'; ctx.shadowBlur = 15; ctx.shadowColor = '#3b82f6';
                     ctx.fillRect(cx - 15, cy - 15, 30, 30);
-                } else {
-                    ctx.fillStyle = '#eab308'; // Yellow
-                    ctx.shadowBlur = 15;
-                    ctx.shadowColor = '#eab308';
-                    ctx.beginPath();
-                    ctx.moveTo(cx, cy - 18);
-                    ctx.lineTo(cx + 18, cy + 15);
-                    ctx.lineTo(cx - 18, cy + 15);
-                    ctx.closePath();
-                    ctx.fill();
+                } else if (currentTargetType === STIMULUS_TRIANGLE) {
+                    ctx.fillStyle = '#eab308'; ctx.shadowBlur = 15; ctx.shadowColor = '#eab308';
+                    ctx.beginPath(); ctx.moveTo(cx, cy - 18); ctx.lineTo(cx + 18, cy + 15); ctx.lineTo(cx - 18, cy + 15);
+                    ctx.closePath(); ctx.fill();
+                } else if (currentTargetType === STIMULUS_NOGO) {
+                    // Impulskontrolle: Roter Kreis, Gelbes Quadrat oder Blaues Dreieck
+                    if (currentNoGoType === 0) { // Roter Kreis
+                        ctx.fillStyle = '#ef4444'; ctx.shadowBlur = 15; ctx.shadowColor = '#ef4444';
+                        ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI * 2); ctx.fill();
+                    } else if (currentNoGoType === 1) { // Gelbes Quadrat (Falsche Farbe, richtige Form)
+                        ctx.fillStyle = '#eab308'; ctx.shadowBlur = 15; ctx.shadowColor = '#eab308';
+                        ctx.fillRect(cx - 15, cy - 15, 30, 30);
+                    } else if (currentNoGoType === 2) { // Blaues Dreieck (Richtige Farbe, falsche Form)
+                        ctx.fillStyle = '#3b82f6'; ctx.shadowBlur = 15; ctx.shadowColor = '#3b82f6';
+                        ctx.beginPath(); ctx.moveTo(cx, cy - 18); ctx.lineTo(cx + 18, cy + 15); ctx.lineTo(cx - 18, cy + 15);
+                        ctx.closePath(); ctx.fill();
+                    }
                 }
                 ctx.shadowBlur = 0;
             } else {
-                // Draw normal fixation cross
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
                 ctx.beginPath();
-                ctx.moveTo(cx - 10, cy);
-                ctx.lineTo(cx + 10, cy);
-                ctx.moveTo(cx, cy - 10);
-                ctx.lineTo(cx, cy + 10);
+                ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy);
+                ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
                 ctx.stroke();
             }
         }
 
-        function gameLoop(timestamp) {
-            // Delta time not strictly needed for basic kinematic updates here
+        function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Update & Draw Background Particles (Distractors)
             if (gameState !== STATE_MENU && gameState !== STATE_RESULTS) {
-                particles.forEach(p => {
-                    p.update();
-                    p.draw(ctx);
-                });
-
-                // Update & Draw the main distractor (Wanderer)
+                particles.forEach(p => { p.update(); p.draw(ctx); });
                 if (gameState === STATE_WAITING || gameState === STATE_STIMULUS) {
-                    wanderer.update();
-                    wanderer.draw(ctx);
+                    wanderer.update(); wanderer.draw(ctx);
                 }
-
-                // Draw Central Fixation
                 drawCenterFixation();
             }
-
             requestAnimationFrame(gameLoop);
         }
-
-        // Start animation loop
         requestAnimationFrame(gameLoop);
 
         function showFeedback(player, text, color) {
@@ -547,106 +451,104 @@
             msgElem.style.color = color;
             fbElem.style.opacity = '1';
             
-            setTimeout(() => {
-                fbElem.style.opacity = '0';
-            }, 800);
+            setTimeout(() => { fbElem.style.opacity = '0'; }, 800);
         }
 
         function nextTrial() {
             if (currentTrial >= TOTAL_TRIALS) {
-                endGame();
-                return;
+                endGame(); return;
             }
 
             currentTrial++;
             hudRound.textContent = `${currentTrial}/${TOTAL_TRIALS}`;
             gameState = STATE_WAITING;
             
-            p1Responded = false;
-            p2Responded = false;
-            
+            p1Stats.responded = false; p2Stats.responded = false;
             wanderer.spawn();
 
-            // Random delay between 1.5s and 4s
             const delay = 1500 + Math.random() * 2500;
-            
             stimulusTimer = setTimeout(() => {
-                if (gameState === STATE_WAITING) {
-                    showStimulus();
-                }
+                if (gameState === STATE_WAITING) showStimulus();
             }, delay);
         }
 
         function showStimulus() {
             gameState = STATE_STIMULUS;
             timeStimulusShown = performance.now();
-            currentTargetType = Math.random() > 0.5 ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
             
-            // Auto-miss if no reaction after 2.5 seconds
+            // 20% Chance für einen No-Go Trial
+            const rand = Math.random();
+            if (rand < 0.20) {
+                currentTargetType = STIMULUS_NOGO;
+                currentNoGoType = Math.floor(Math.random() * 3);
+            } else if (rand < 0.60) {
+                currentTargetType = STIMULUS_SQUARE;
+            } else {
+                currentTargetType = STIMULUS_TRIANGLE;
+            }
+            
+            // Timeout Dauer: Kürzere Wartezeit bei No-Go, um Flow zu erhalten.
+            const timeoutDuration = (currentTargetType === STIMULUS_NOGO) ? 1800 : 2500;
+            
             stimulusTimer = setTimeout(() => {
                 if (gameState === STATE_STIMULUS) {
-                    if (!p1Responded) { p1Errors++; p1Responded = true; showFeedback(1, "Verfehlt!", "#ef4444"); }
-                    if (is2Player && !p2Responded) { p2Errors++; p2Responded = true; showFeedback(2, "Verfehlt!", "#ef4444"); }
+                    if (currentTargetType === STIMULUS_NOGO) {
+                        // Niemand hat gedrückt? Perfekt! (Erfolgreiche Inhibition)
+                        if (!p1Stats.responded) showFeedback(1, "Gut inhibiert!", "#4ade80");
+                        if (is2Player && !p2Stats.responded) showFeedback(2, "Gut inhibiert!", "#4ade80");
+                    } else {
+                        // Target war da, aber niemand hat gedrückt (Zu langsam)
+                        if (!p1Stats.responded) { p1Stats.errors++; p1Stats.responded = true; showFeedback(1, "Verfehlt!", "#ef4444"); }
+                        if (is2Player && !p2Stats.responded) { p2Stats.errors++; p2Stats.responded = true; showFeedback(2, "Verfehlt!", "#ef4444"); }
+                    }
                     checkTrialEnd();
                 }
-            }, 2500);
+            }, timeoutDuration);
         }
 
         function handleInput(player, inputType) {
             if (gameState === STATE_WAITING) {
-                // False start!
-                if (player === 1 && !p1Responded) {
-                    p1Errors++; p1Responded = true;
-                    showFeedback(1, "Zu früh!", "#ef4444");
+                const stats = player === 1 ? p1Stats : p2Stats;
+                if (!stats.responded) {
+                    stats.falseAlarms++; stats.responded = true;
+                    showFeedback(player, "Zu früh!", "#ef4444");
                 }
-                if (player === 2 && is2Player && !p2Responded) {
-                    p2Errors++; p2Responded = true;
-                    showFeedback(2, "Zu früh!", "#ef4444");
-                }
-                
-                // If everyone false-started, move on immediately
-                if (p1Responded && (!is2Player || p2Responded)) {
-                    clearTimeout(stimulusTimer);
-                    checkTrialEnd();
+                if (p1Stats.responded && (!is2Player || p2Stats.responded)) {
+                    clearTimeout(stimulusTimer); checkTrialEnd();
                 }
                 return;
             }
 
             if (gameState === STATE_STIMULUS) {
+                const stats = player === 1 ? p1Stats : p2Stats;
                 const reactionTime = performance.now() - timeStimulusShown;
                 
-                // Process P1
-                if (player === 1 && !p1Responded) {
-                    p1Responded = true;
-                    if (inputType === currentTargetType) {
-                        p1ReactionTimes.push(reactionTime);
-                        if (reactionTime < p1BestTime) p1BestTime = reactionTime;
-                        showFeedback(1, `${Math.round(reactionTime)} ms`, "#4ade80");
+                if (!stats.responded) {
+                    stats.responded = true;
+                    
+                    if (currentTargetType === STIMULUS_NOGO) {
+                        // Fehlschlag der Inhibitionskontrolle!
+                        stats.falseAlarms++;
+                        showFeedback(player, "Falscher Alarm!", "#ef4444");
                     } else {
-                        p1Errors++;
-                        p1ReactionTimes.push(reactionTime);
-                        showFeedback(1, "Falsch!", "#ef4444");
-                    }
-                }
-                
-                // Process P2
-                if (player === 2 && is2Player && !p2Responded) {
-                    p2Responded = true;
-                    if (inputType === currentTargetType) {
-                        p2ReactionTimes.push(reactionTime);
-                        if (reactionTime < p2BestTime) p2BestTime = reactionTime;
-                        showFeedback(2, `${Math.round(reactionTime)} ms`, "#4ade80");
-                    } else {
-                        p2Errors++;
-                        p2ReactionTimes.push(reactionTime);
-                        showFeedback(2, "Falsch!", "#ef4444");
+                        // Reguläres Target
+                        if (inputType === currentTargetType) {
+                            stats.times.push(reactionTime);
+                            if (reactionTime < stats.best) stats.best = reactionTime;
+                            showFeedback(player, `${Math.round(reactionTime)} ms`, "#4ade80");
+                        } else {
+                            stats.errors++;
+                            stats.times.push(reactionTime); // Zählt trotzdem zur Zeit
+                            showFeedback(player, "Falsche Form!", "#f97316");
+                        }
                     }
                 }
 
-                // End trial when everyone needed has responded
-                if (p1Responded && (!is2Player || p2Responded)) {
-                    clearTimeout(stimulusTimer);
-                    checkTrialEnd();
+                // End trial when everyone needed has responded, EXCEPT in No-Go where we want to wait to see if P2 fails too.
+                if (currentTargetType !== STIMULUS_NOGO || (p1Stats.responded && (!is2Player || p2Stats.responded))) {
+                    if (p1Stats.responded && (!is2Player || p2Stats.responded)) {
+                        clearTimeout(stimulusTimer); checkTrialEnd();
+                    }
                 }
             }
         }
@@ -654,7 +556,7 @@
         function checkTrialEnd() {
             gameState = STATE_FEEDBACK;
             wanderer.active = false;
-            setTimeout(nextTrial, 1200);
+            setTimeout(nextTrial, 1000);
         }
 
         function startGame() {
@@ -663,30 +565,34 @@
             uiHud.classList.remove('hidden');
             touchControls.classList.remove('hidden');
             
-            // Reset Stats
             currentTrial = 0;
-            p1ReactionTimes = []; p1Errors = 0; p1BestTime = 9999;
-            p2ReactionTimes = []; p2Errors = 0; p2BestTime = 9999;
+            p1Stats = { times: [], errors: 0, falseAlarms: 0, best: 9999, responded: false };
+            p2Stats = { times: [], errors: 0, falseAlarms: 0, best: 9999, responded: false };
             
             nextTrial();
         }
 
-        function createResultCard(title, avgTime, bestTime, errors, colorClass) {
-            const avgStr = avgTime > 0 ? `${Math.round(avgTime)} ms` : '-';
-            const bestStr = bestTime !== 9999 ? `${Math.round(bestTime)} ms` : '-';
+        function createResultCard(title, stats, colorClass) {
+            const avg = stats.times.length > 0 ? stats.times.reduce((a, b) => a + b) / stats.times.length : 0;
+            const avgStr = avg > 0 ? `${Math.round(avg)} ms` : '-';
+            const bestStr = stats.best !== 9999 ? `${Math.round(stats.best)} ms` : '-';
             
             return `
                 <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex-1 min-w-[250px]">
                     <h3 class="text-xl font-bold mb-4 text-white">${title}</h3>
-                    <div class="text-sm text-slate-400 uppercase tracking-widest mb-1">Durchschnitt</div>
+                    <div class="text-sm text-slate-400 uppercase tracking-widest mb-1">Reaktionszeit (Ø)</div>
                     <div class="text-4xl font-extrabold ${colorClass} mb-4">${avgStr}</div>
                     
-                    <div class="grid grid-cols-2 gap-2 text-sm">
-                        <div class="bg-slate-900 p-2 rounded">
-                            <span class="text-slate-400 block text-xs">Fehler</span>
-                            <span class="text-red-400 font-bold">${errors}</span>
+                    <div class="grid grid-cols-3 gap-2 text-sm">
+                        <div class="bg-slate-900 p-2 rounded text-center">
+                            <span class="text-slate-400 block text-xs">Form-Fehler</span>
+                            <span class="text-orange-400 font-bold">${stats.errors}</span>
                         </div>
-                        <div class="bg-slate-900 p-2 rounded">
+                        <div class="bg-slate-900 p-2 rounded text-center" title="Impulskontrolle versagt / Zu früh gedrückt">
+                            <span class="text-slate-400 block text-xs">Impuls-Fehler</span>
+                            <span class="text-red-500 font-bold">${stats.falseAlarms}</span>
+                        </div>
+                        <div class="bg-slate-900 p-2 rounded text-center">
                             <span class="text-slate-400 block text-xs">Bestzeit</span>
                             <span class="text-green-400 font-bold">${bestStr}</span>
                         </div>
@@ -701,145 +607,106 @@
             uiResults.classList.remove('hidden');
             touchControls.classList.add('hidden');
 
-            const p1Avg = p1ReactionTimes.length > 0 ? p1ReactionTimes.reduce((a, b) => a + b) / p1ReactionTimes.length : 0;
-            const p2Avg = p2ReactionTimes.length > 0 ? p2ReactionTimes.reduce((a, b) => a + b) / p2ReactionTimes.length : 0;
+            const p1Avg = p1Stats.times.length > 0 ? p1Stats.times.reduce((a, b) => a + b) / p1Stats.times.length : 0;
+            const p2Avg = p2Stats.times.length > 0 ? p2Stats.times.reduce((a, b) => a + b) / p2Stats.times.length : 0;
 
             const resultsContainer = document.getElementById('results-container');
-            resultsContainer.innerHTML = createResultCard("Spieler 1", p1Avg, p1BestTime, p1Errors, "text-blue-400");
+            resultsContainer.innerHTML = createResultCard("Spieler 1", p1Stats, "text-blue-400");
             
             if (is2Player) {
-                resultsContainer.innerHTML += createResultCard("Spieler 2", p2Avg, p2BestTime, p2Errors, "text-emerald-400");
+                resultsContainer.innerHTML += createResultCard("Spieler 2", p2Stats, "text-emerald-400");
             }
 
-            // Evaluation text
+            // Evaluation text logic
             const evalEl = document.getElementById('result-evaluation');
+            const p1TotalErr = p1Stats.errors + p1Stats.falseAlarms;
+            const p2TotalErr = p2Stats.errors + p2Stats.falseAlarms;
+
             if (is2Player) {
-                if (p1Avg === 0 && p2Avg === 0) evalEl.textContent = "Niemand hat reagiert.";
-                else if (p1Avg === 0 || p2Avg === 0 || p1Errors !== p2Errors) {
-                    // Win logic: Priority is fewer errors, then time
-                    if (p1Errors < p2Errors) evalEl.textContent = "Spieler 1 gewinnt (Weniger Fehler/Fehlstarts)!";
-                    else if (p2Errors < p1Errors) evalEl.textContent = "Spieler 2 gewinnt (Weniger Fehler/Fehlstarts)!";
-                    else evalEl.textContent = (p1Avg < p2Avg) ? "Spieler 1 gewinnt durch bessere Zeit!" : "Spieler 2 gewinnt durch bessere Zeit!";
-                }
-                else if (p1Avg < p2Avg) evalEl.textContent = `Beide gleich fehlerfrei, aber Spieler 1 war im Schnitt ${Math.round(p2Avg - p1Avg)} ms schneller!`;
-                else if (p2Avg < p1Avg) evalEl.textContent = `Beide gleich fehlerfrei, aber Spieler 2 war im Schnitt ${Math.round(p1Avg - p2Avg)} ms schneller!`;
-                else evalEl.textContent = "Unentschieden! Exakt gleiche Werte.";
+                if (p1Avg === 0 && p2Avg === 0) evalEl.textContent = "Test ungültig. Zu wenige Reaktionen.";
+                else if (p1TotalErr < p2TotalErr) evalEl.textContent = "Spieler 1 gewinnt durch bessere Fehler-/Impulskontrolle!";
+                else if (p2TotalErr < p1TotalErr) evalEl.textContent = "Spieler 2 gewinnt durch bessere Fehler-/Impulskontrolle!";
+                else evalEl.textContent = (p1Avg < p2Avg) ? "Gleichstand bei Fehlern: Spieler 1 gewinnt durch schnellere Reflexe!" : "Gleichstand bei Fehlern: Spieler 2 gewinnt durch schnellere Reflexe!";
             } else {
-                if (p1Avg === 0) evalEl.textContent = "Keine Treffer. Konzentrieren Sie sich auf das Zentrum!";
-                else if (p1Avg < 350 && p1Errors === 0) evalEl.textContent = "Exzellente Inhibitionskontrolle! Perfekter Fokus trotz extremen Ablenkungen.";
-                else if (p1Avg < 450) evalEl.textContent = "Gute Leistung. Die Falschreize (Decoys) waren intensiv, aber Sie blieben fokussiert.";
-                else evalEl.textContent = "Erhöhte Reaktionszeit. Die neuen Ablenkungen (inkl. Falschreize) haben Ihre Aufmerksamkeit erfolgreich gestört.";
+                if (p1Avg === 0) evalEl.textContent = "Test ungültig.";
+                else if (p1Stats.falseAlarms > 2) evalEl.textContent = "Ihre Reaktionszeit ist gut, aber Sie neigen zu impulsiven Handlungen (Falscher Alarm bei No-Go-Reizen). Trainieren Sie, den Reiz erst kognitiv zu verarbeiten, bevor Sie drücken.";
+                else if (p1Avg < 380 && p1TotalErr === 0) evalEl.textContent = "Exzellente kognitive Leistung! Perfekte Inhibitionskontrolle und starker Fokus.";
+                else if (p1Avg < 480) evalEl.textContent = "Gute, durchschnittliche Leistung. Die Filterung der Störreize funktioniert ordentlich.";
+                else evalEl.textContent = "Erhöhte Reaktionszeit. Die Störreize haben Sie erfolgreich abgelenkt (Sakkaden-Auslösung). Versuchen Sie, den Blick starrer im Zentrum zu verankern.";
             }
         }
 
-        // Event Listeners for Input
         document.addEventListener('keydown', (e) => {
             if (gameState === STATE_MENU || gameState === STATE_RESULTS) return;
-            
-            // Player 1
             if (e.key.toLowerCase() === p1SquareKey) handleInput(1, STIMULUS_SQUARE);
             if (e.key.toLowerCase() === p1TriangleKey) handleInput(1, STIMULUS_TRIANGLE);
             
-            // Player 2 (or alternative for 1P)
             if (e.key === p2SquareKey) handleInput(is2Player ? 2 : 1, STIMULUS_SQUARE);
             if (e.key === p2TriangleKey) handleInput(is2Player ? 2 : 1, STIMULUS_TRIANGLE);
         });
 
-        // Button Event Listeners
         document.getElementById('start-btn').addEventListener('click', startGame);
         document.getElementById('restart-btn').addEventListener('click', () => {
-            // Zurück ins Hauptmenü, um neue Steuerung zu zeigen
             gameState = STATE_MENU;
             uiResults.classList.add('hidden');
             uiMenu.classList.remove('hidden');
             randomizeControls();
         });
         
-        // Mapping Logic (Tastenbelegung würfeln)
         function randomizeControls() {
-            // P1: Zufällig entscheiden, ob 'A' Quadrat oder Dreieck ist
-            if (Math.random() > 0.5) {
-                p1SquareKey = 'a'; p1TriangleKey = 'd';
-            } else {
-                p1SquareKey = 'd'; p1TriangleKey = 'a';
-            }
+            if (Math.random() > 0.5) { p1SquareKey = 'a'; p1TriangleKey = 'd'; } 
+            else { p1SquareKey = 'd'; p1TriangleKey = 'a'; }
 
-            // P2: Zufällig entscheiden, ob 'Pfeil Links' Quadrat oder Dreieck ist
-            if (Math.random() > 0.5) {
-                p2SquareKey = 'ArrowLeft'; p2TriangleKey = 'ArrowRight';
-            } else {
-                p2SquareKey = 'ArrowRight'; p2TriangleKey = 'ArrowLeft';
-            }
+            if (Math.random() > 0.5) { p2SquareKey = 'ArrowLeft'; p2TriangleKey = 'ArrowRight'; } 
+            else { p2SquareKey = 'ArrowRight'; p2TriangleKey = 'ArrowLeft'; }
 
             updateUIForControls();
         }
 
         function updateUIForControls() {
-            // 1. Menü-Texte updaten
-            const p1SqKey = p1SquareKey.toUpperCase();
             const p1SqTouch = p1SquareKey === 'a' ? 'Hälfte Oben' : 'Hälfte Unten';
-            const p2SqKey = p2SquareKey === 'ArrowLeft' ? 'LINKS' : 'RECHTS';
             const p2SqTouch = p2SquareKey === 'ArrowLeft' ? 'Hälfte Oben' : 'Hälfte Unten';
-            
-            const p1TrKey = p1TriangleKey.toUpperCase();
             const p1TrTouch = p1TriangleKey === 'a' ? 'Hälfte Oben' : 'Hälfte Unten';
-            const p2TrKey = p2TriangleKey === 'ArrowLeft' ? 'LINKS' : 'RECHTS';
             const p2TrTouch = p2TriangleKey === 'ArrowLeft' ? 'Hälfte Oben' : 'Hälfte Unten';
             
             document.getElementById('rule-blue').innerHTML = 
-                `S1: Taste '${p1SqKey}' (${p1SqTouch}) | S2: Pfeil ${p2SqKey} (${p2SqTouch})`;
+                `S1: Taste '${p1SquareKey.toUpperCase()}' / Touch: ${p1SqTouch} <br> S2: Pfeil '${p2SquareKey === 'ArrowLeft' ? 'LINKS' : 'RECHTS'}' / Touch: ${p2SqTouch}`;
             document.getElementById('rule-yellow').innerHTML = 
-                `S1: Taste '${p1TrKey}' (${p1TrTouch}) | S2: Pfeil ${p2TrKey} (${p2TrTouch})`;
-
-            // 2. Touch-Zonen updaten (Optik)
-            const styleBlue = "bg-slate-900/80 p-4 rounded-xl border-2 text-blue-400 border-blue-500/30 text-center pointer-events-none shadow-lg";
-            const styleYellow = "bg-slate-900/80 p-4 rounded-xl border-2 text-yellow-400 border-yellow-500/30 text-center pointer-events-none shadow-lg";
+                `S1: Taste '${p1TriangleKey.toUpperCase()}' / Touch: ${p1TrTouch} <br> S2: Pfeil '${p2TriangleKey === 'ArrowLeft' ? 'LINKS' : 'RECHTS'}' / Touch: ${p2TrTouch}`;
             
-            // P1 Left Side (Top=A, Bottom=D)
-            document.getElementById('touch-p1-top').innerHTML = p1SquareKey === 'a' 
-                ? `<div class="${styleBlue}">A <br><br> ■</div>` : `<div class="${styleYellow}">A <br><br> ▲</div>`;
-            document.getElementById('touch-p1-bottom').innerHTML = p1SquareKey === 'd' 
-                ? `<div class="${styleBlue}">D <br><br> ■</div>` : `<div class="${styleYellow}">D <br><br> ▲</div>`;
-                
-            // P2 Right Side (Top=ArrowLeft, Bottom=ArrowRight)
-            document.getElementById('touch-p2-top').innerHTML = p2SquareKey === 'ArrowLeft' 
-                ? `<div class="${styleBlue}">◀ <br><br> ■</div>` : `<div class="${styleYellow}">◀ <br><br> ▲</div>`;
-            document.getElementById('touch-p2-bottom').innerHTML = p2SquareKey === 'ArrowRight' 
-                ? `<div class="${styleBlue}">▶ <br><br> ■</div>` : `<div class="${styleYellow}">▶ <br><br> ▲</div>`;
+            document.getElementById('touch-p1-top').innerHTML = '';
+            document.getElementById('touch-p1-bottom').innerHTML = '';
+            document.getElementById('touch-p2-top').innerHTML = '';
+            document.getElementById('touch-p2-bottom').innerHTML = '';
         }
 
-        // Initiale Randomisierung beim ersten Laden der Seite
         randomizeControls();
 
-        // Touch controls setup helper
         function bindTouch(id, player, isTop) {
             const el = document.getElementById(id);
             if (!el) return;
             
             const handleTouch = (e) => {
-                if (e.cancelable) e.preventDefault(); // Verhindert Scrollen und Doppelauslösung sicher auf iOS
+                if (e.cancelable) e.preventDefault();
                 let type;
                 if (player === 1) {
-                    // Die obere Zone ist intern immer 'A', die untere immer 'D' gebunden
-                    const keyForThisZone = isTop ? 'a' : 'd';
-                    type = (p1SquareKey === keyForThisZone) ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
+                    type = (p1SquareKey === (isTop ? 'a' : 'd')) ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
                 } else {
-                    // Die obere Zone ist immer Pfeil Links, die untere Pfeil Rechts
-                    const keyForThisZone = isTop ? 'ArrowLeft' : 'ArrowRight';
-                    type = (p2SquareKey === keyForThisZone) ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
+                    type = (p2SquareKey === (isTop ? 'ArrowLeft' : 'ArrowRight')) ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
                 }
+                
+                el.classList.add('active-tap');
+                setTimeout(() => el.classList.remove('active-tap'), 150);
+                
                 handleInput(player, type);
             };
 
-            // Touch-Events registrieren (passive: false ist zwingend für iPads erforderlich!)
             el.addEventListener('touchstart', handleTouch, { passive: false });
             el.addEventListener('mousedown', handleTouch);
         }
 
-        // Bind the large edge touch zones dynamisch
         bindTouch('touch-p1-top', 1, true);
         bindTouch('touch-p1-bottom', 1, false);
-        
         bindTouch('touch-p2-top', 2, true);
         bindTouch('touch-p2-bottom', 2, false);
 
