@@ -90,9 +90,11 @@
 
     <div id="ui-results" class="ui-layer hidden">
         <div class="ui-content border border-slate-700">
-            <h2 class="text-3xl font-bold mb-6 text-white">Auswertung</h2>
+            <h2 class="text-3xl font-bold mb-2 text-white">Auswertung</h2>
+            <!-- Siegeranzeige -->
+            <div id="winner-announcement"></div>
             
-            <div id="stats-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div id="stats-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 mt-4">
                 <!-- Stats werden dynamisch eingefügt -->
             </div>
 
@@ -162,6 +164,9 @@
 
         let p1Responded = false;
         let p2Responded = false;
+        // Tracking für "Zu früh gedrückt", damit man danach noch die Chance auf die richtige Lösung hat
+        let p1EarlyPressed = false; 
+        let p2EarlyPressed = false;
 
         let particles = [];
         let wanderer = null;
@@ -240,19 +245,32 @@
         }
 
         function createParticle() {
-            // Alle Stör-Partikel sind nun verschiedene Formen und Farben
             let shape = [STIMULUS_SQUARE, STIMULUS_TRIANGLE, STIMULUS_CIRCLE][Math.floor(Math.random() * 3)];
             let colorObj = COLOR_POOL[Math.floor(Math.random() * COLOR_POOL.length)];
             
-            // Zufällige Lebensdauer zwischen 30 und 120 Frames (kurzes Auftauchen)
+            // Zufällige Lebensdauer zwischen 30 und 120 Frames
             let maxLife = Math.random() * 90 + 30;
+            
+            // Verteilung der Größen:
+            // ~33% exakt so groß wie Zentrum (60)
+            // ~17% etwas größer (70 - 85)
+            // ~50% kleiner (20 - 45)
+            let sizeRoll = Math.random();
+            let sizeVal;
+            if (sizeRoll < 0.33) {
+                sizeVal = 60; // Exakt gleich groß
+            } else if (sizeRoll < 0.50) {
+                sizeVal = 70 + Math.random() * 15; // Etwas größer
+            } else {
+                sizeVal = 20 + Math.random() * 25; // Kleiner
+            }
 
             return {
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                vx: (Math.random() - 0.5) * 4, // Etwas stärkere Bewegung
+                vx: (Math.random() - 0.5) * 4,
                 vy: (Math.random() - 0.5) * 4,
-                size: Math.random() * 35 + 15, // Unterschiedliche Größen
+                size: sizeVal,
                 shape: shape,
                 color: colorObj.hex,
                 life: maxLife,
@@ -405,6 +423,8 @@
             gameState = STATE_INTERTRIAL;
             p1Responded = false;
             p2Responded = false;
+            p1EarlyPressed = false;
+            p2EarlyPressed = false;
             let delay = 1500 + Math.random() * 2000;
             // timeoutId wird hier NICHT genutzt, es wird nur intern verschoben.
             setTimeout(showStimulus, delay);
@@ -501,13 +521,13 @@
         }
 
         function handleInput(player, type) {
-            // "Zu früh" Drücker im Zwischenbildschirm bestrafen
+            // "Zu früh" Drücker im Zwischenbildschirm: Zählt als Fehler, sperrt aber NICHT den eigentlichen Versuch
             if (gameState === STATE_INTERTRIAL) {
-                if (player === 1 && !p1Responded) { 
-                    statsP1.impulseErrors++; p1Responded = true; showFeedback(1, "Zu früh!"); 
+                if (player === 1 && !p1EarlyPressed) { 
+                    statsP1.impulseErrors++; p1EarlyPressed = true; showFeedback(1, "Zu früh!"); 
                 }
-                if (player === 2 && !p2Responded && is2Player) { 
-                    statsP2.impulseErrors++; p2Responded = true; showFeedback(2, "Zu früh!"); 
+                if (player === 2 && !p2EarlyPressed && is2Player) { 
+                    statsP2.impulseErrors++; p2EarlyPressed = true; showFeedback(2, "Zu früh!"); 
                 }
                 return;
             }
@@ -606,27 +626,53 @@
             gameState = STATE_RESULTS;
             touchLayer.classList.add('hidden');
             
+            let winnerHTML = "";
+
+            if (is2Player) {
+                let err1 = statsP1.formErrors + statsP1.impulseErrors + statsP1.missErrors;
+                let err2 = statsP2.formErrors + statsP2.impulseErrors + statsP2.missErrors;
+                let rtRaw1 = statsP1.rt.length > 0 ? (statsP1.rt.reduce((a,b)=>a+b,0)/statsP1.rt.length) : Infinity;
+                let rtRaw2 = statsP2.rt.length > 0 ? (statsP2.rt.reduce((a,b)=>a+b,0)/statsP2.rt.length) : Infinity;
+
+                let winnerText = "";
+                if (err1 < err2) {
+                    winnerText = "🏆 Spieler 1 gewinnt (Weniger Fehler)!";
+                } else if (err2 < err1) {
+                    winnerText = "🏆 Spieler 2 gewinnt (Weniger Fehler)!";
+                } else {
+                    if (rtRaw1 < rtRaw2) winnerText = "🏆 Spieler 1 gewinnt (Schneller bei Gleichstand)!";
+                    else if (rtRaw2 < rtRaw1) winnerText = "🏆 Spieler 2 gewinnt (Schneller bei Gleichstand)!";
+                    else winnerText = "🤝 Unentschieden!";
+                }
+                winnerHTML = `<h3 class="text-2xl font-bold text-yellow-400 mb-4 text-center border-b border-slate-600 pb-4">${winnerText}</h3>`;
+            }
+            document.getElementById('winner-announcement').innerHTML = winnerHTML;
+            
             const createStatsHTML = (name, stats) => {
-                let avgRt = stats.rt.length > 0 ? (stats.rt.reduce((a,b)=>a+b,0)/stats.rt.length).toFixed(0) : "Keine";
-                let bestRt = stats.rt.length > 0 ? Math.min(...stats.rt).toFixed(0) : "Keine";
+                let avgRtRaw = stats.rt.length > 0 ? (stats.rt.reduce((a,b)=>a+b,0)/stats.rt.length) : Infinity;
+                let avgRt = avgRtRaw !== Infinity ? avgRtRaw.toFixed(0) + " ms" : "Keine";
+                let bestRt = stats.rt.length > 0 ? Math.min(...stats.rt).toFixed(0) + " ms" : "Keine";
+                
                 let accuracy = Math.round((stats.correct / MAX_TRIALS) * 100);
+                let totalErrors = stats.formErrors + stats.impulseErrors + stats.missErrors;
                 
                 let evalText = "";
                 if (stats.impulseErrors > 2) evalText = "<span class='text-red-400'>Impulsiv. Fokus verlagert sich zu schnell.</span>";
                 else if (stats.missErrors > 2) evalText = "<span class='text-red-400'>Unaufmerksam. Reize werden verpasst.</span>";
-                else if (avgRt !== "Keine" && avgRt < 450 && accuracy > 85) evalText = "<span class='text-green-400'>Exzellente Fixationskontrolle!</span>";
+                else if (avgRtRaw !== Infinity && avgRtRaw < 450 && accuracy > 85) evalText = "<span class='text-green-400'>Exzellente Fixationskontrolle!</span>";
                 else evalText = "<span class='text-yellow-400'>Augen sind dem Wanderer gefolgt (Zeitverlust).</span>";
 
                 return `
                     <div class="bg-slate-800 p-4 rounded-lg border ${accuracy > 80 ? 'border-green-500' : 'border-slate-600'} text-left">
                         <h3 class="font-bold text-xl mb-3 text-blue-300 text-center">${name}</h3>
                         <p class="mb-1 text-slate-300">Richtig gelöst: <b class="text-white">${stats.correct} / ${MAX_TRIALS}</b></p>
-                        <p class="mb-1 text-slate-300">Reaktionszeit (Ø): <b class="text-white">${avgRt} ms</b></p>
-                        <p class="mb-1 text-slate-300">Spitzenwert (Schnellste): <b class="text-white">${bestRt} ms</b></p>
+                        <p class="mb-1 text-slate-300">Reaktionszeit (Ø): <b class="text-white">${avgRt}</b></p>
+                        <p class="mb-1 text-slate-300">Spitzenwert (Schnellste): <b class="text-white">${bestRt}</b></p>
                         <hr class="border-slate-600 my-2">
-                        <p class="mb-1 text-slate-300 text-sm">Form-Fehler (Falsche Taste): <b class="text-red-300">${stats.formErrors}</b></p>
-                        <p class="mb-1 text-slate-300 text-sm">Ausgelassen (Verpasst): <b class="text-red-300">${stats.missErrors}</b></p>
-                        <p class="mb-3 text-slate-300 text-sm">Impuls-Fehler (Zu früh / No-Go): <b class="text-red-300">${stats.impulseErrors}</b></p>
+                        <p class="mb-1 text-slate-300 font-bold">Gesamtfehler: <b class="text-red-400">${totalErrors}</b></p>
+                        <p class="mb-1 text-slate-300 text-sm">├ Form-Fehler (Falsche Taste): <b class="text-red-300">${stats.formErrors}</b></p>
+                        <p class="mb-1 text-slate-300 text-sm">├ Ausgelassen (Verpasst): <b class="text-red-300">${stats.missErrors}</b></p>
+                        <p class="mb-3 text-slate-300 text-sm">└ Impuls-Fehler (Zu früh / No-Go): <b class="text-red-300">${stats.impulseErrors}</b></p>
                         <p class="text-sm italic text-center mt-2">${evalText}</p>
                     </div>
                 `;
@@ -669,9 +715,13 @@
                     Object.assign(p, createParticle());
                 }
                 
-                // Sanftes Ein- und Ausblenden (Fade in / Fade out) anhand der verbleibenden Lebensdauer
-                let opacity = Math.sin((p.life / p.maxLife) * Math.PI) * 0.65; 
-                ctx.globalAlpha = Math.max(0, opacity);
+                // Partikel starten immer mit einer konstanten, starken Deckkraft (70%)
+                // Faden erst in den letzten 15 Frames der Lebensdauer sanft aus, damit sie nicht abrupt verschwinden
+                let opacity = 0.7;
+                if (p.life < 15) {
+                    opacity = 0.7 * (p.life / 15);
+                }
+                ctx.globalAlpha = opacity;
                 
                 // Form zeichnen
                 drawTargetShape(ctx, p.x, p.y, p.size, p.shape, {hex: p.color});
