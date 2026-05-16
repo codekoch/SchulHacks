@@ -135,7 +135,6 @@
                         <li>Schauen Sie <b>immer</b> auf das Kreuz in der Mitte. Ignorieren Sie fliegende Objekte.</li>
                         <li>Wenn im Zentrum ein <b>blaues Quadrat</b> erscheint: <br><span id="rule-blue" class="text-blue-300 font-mono bg-black/30 px-2 py-1 rounded mt-1 inline-block">...</span></li>
                         <li>Wenn im Zentrum ein <b>gelbes Dreieck</b> erscheint: <br><span id="rule-yellow" class="text-yellow-300 font-mono bg-black/30 px-2 py-1 rounded mt-1 inline-block">...</span></li>
-                        <li class="text-red-300 mt-2"><b>NEU (Impulskontrolle):</b> Wenn ein <b>ROTER KREIS, GELBES QUADRAT oder BLAUES DREIECK</b> erscheint, dürfen Sie <b>NICHTS</b> drücken!</li>
                     </ul>
                 </div>
 
@@ -664,10 +663,10 @@
         }
 
         function updateUIForControls() {
-            const p1SqTouch = p1SquareKey === 'a' ? 'Hälfte Oben' : 'Hälfte Unten';
-            const p2SqTouch = p2SquareKey === 'ArrowLeft' ? 'Hälfte Oben' : 'Hälfte Unten';
-            const p1TrTouch = p1TriangleKey === 'a' ? 'Hälfte Oben' : 'Hälfte Unten';
-            const p2TrTouch = p2TriangleKey === 'ArrowLeft' ? 'Hälfte Oben' : 'Hälfte Unten';
+            const p1SqTouch = p1SquareKey === 'a' ? 'Linke Hälfte Oben' : 'Linke Hälfte Unten';
+            const p2SqTouch = p2SquareKey === 'ArrowLeft' ? 'Rechte Hälfte Oben' : 'Rechte Hälfte Unten';
+            const p1TrTouch = p1TriangleKey === 'a' ? 'Linke Hälfte Oben' : 'Linke Hälfte Unten';
+            const p2TrTouch = p2TriangleKey === 'ArrowLeft' ? 'Rechte Hälfte Oben' : 'Rechte Hälfte Unten';
             
             document.getElementById('rule-blue').innerHTML = 
                 `S1: Taste '${p1SquareKey.toUpperCase()}' / Touch: ${p1SqTouch} <br> S2: Pfeil '${p2SquareKey === 'ArrowLeft' ? 'LINKS' : 'RECHTS'}' / Touch: ${p2SqTouch}`;
