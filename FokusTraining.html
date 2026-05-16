@@ -10,7 +10,7 @@
         #game-canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
         .ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-        .ui-content { pointer-events: auto; background: rgba(30, 41, 59, 0.95); padding: 2rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 90vw; width: 600px; max-height: 95vh; overflow-y: auto; text-align: center; }
+        .ui-content { pointer-events: auto; background: rgba(30, 41, 59, 0.95); padding: 2rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 90vw; width: 620px; max-height: 95vh; overflow-y: auto; text-align: center; }
         
         .btn { background-color: #3b82f6; color: white; font-weight: bold; padding: 0.75rem 1.5rem; border-radius: 0.5rem; transition: background-color 0.2s; cursor: pointer; }
         .btn:hover { background-color: #2563eb; }
@@ -57,9 +57,10 @@
             </div>
 
             <div class="flex gap-2 justify-center mb-4 flex-wrap">
-                <button id="btn-diff-1" class="btn mode-btn text-sm px-3 py-2">Level 1 (1 Form)</button>
-                <button id="btn-diff-2" class="btn mode-btn text-sm px-3 py-2">Level 2 (2 Formen)</button>
-                <button id="btn-diff-3" class="btn mode-btn active text-sm px-3 py-2">Level 3 (3 Formen)</button>
+                <button id="btn-diff-1" class="btn mode-btn text-xs px-3 py-2">Level 1 (1 Form)</button>
+                <button id="btn-diff-2" class="btn mode-btn active text-xs px-3 py-2">Level 2 (1 Taste)</button>
+                <button id="btn-diff-3" class="btn mode-btn text-xs px-3 py-2">Level 3 (2 Tasten)</button>
+                <button id="btn-diff-4" class="btn mode-btn text-xs px-3 py-2">Level 4 (3 Formen)</button>
             </div>
 
             <div class="flex gap-4 justify-center mb-6">
@@ -151,7 +152,7 @@
 
         let gameState = STATE_MENU;
         let is2Player = false;
-        let currentDifficulty = 3;
+        let currentDifficulty = 2; // Geändert auf 2 für den Startwert
         let currentTrial = 0;
         
         let statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
@@ -164,7 +165,7 @@
 
         let p1Responded = false;
         let p2Responded = false;
-        // Tracking für "Zu früh gedrückt", damit man danach noch die Chance auf die richtige Lösung hat
+        // Tracking für "Zu früh gedrückt"
         let p1EarlyPressed = false; 
         let p2EarlyPressed = false;
 
@@ -193,8 +194,8 @@
                 this.pattern = patterns[Math.floor(Math.random() * patterns.length)];
                 this.angle = Math.random() * Math.PI * 2;
                 this.time = 0;
-                this.radius = 0; // Wichtig: Startet bei 0, damit er exakt aus dem Zentrum herauswächst
-                this.maxLifeTime = 250 + Math.random() * 150; // Notfall-Reset nach bestimmter Zeit
+                this.radius = 0;
+                this.maxLifeTime = 250 + Math.random() * 150; 
             }
 
             update() {
@@ -216,27 +217,23 @@
                     this.x += Math.cos(this.angle) * this.baseSpeed;
                     this.y += Math.sin(this.angle) * this.baseSpeed;
                 } else if (this.pattern === 'ORBIT_LEAVE') {
-                    // Kreist elliptisch und der Radius wächst kontinuierlich, bis er verschwindet
                     this.angle += 0.035;
                     this.radius += 0.6; 
                     this.x = this.centerX + Math.cos(this.angle) * this.radius;
                     this.y = this.centerY + Math.sin(this.angle) * (this.radius * 0.6); 
                 }
 
-                // Neustart, wenn er den Bildschirm verlässt ODER seine maximale Lebenszeit erreicht ist
                 if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height || this.time * 20 > this.maxLifeTime) {
                     this.resetToCenter();
                 }
             }
 
             draw(ctx) {
-                // Äußerer Kreis in der zufällig berechneten Farbe
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Innerer weißer Punkt
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size * 0.3, 0, Math.PI * 2);
@@ -248,17 +245,12 @@
             let shape = [STIMULUS_SQUARE, STIMULUS_TRIANGLE, STIMULUS_CIRCLE][Math.floor(Math.random() * 3)];
             let colorObj = COLOR_POOL[Math.floor(Math.random() * COLOR_POOL.length)];
             
-            // Zufällige Lebensdauer zwischen 30 und 120 Frames
             let maxLife = Math.random() * 90 + 30;
             
-            // Verteilung der Größen:
-            // ~33% exakt so groß wie Zentrum (60)
-            // ~17% etwas größer (70 - 85)
-            // ~50% kleiner (20 - 45)
             let sizeRoll = Math.random();
             let sizeVal;
             if (sizeRoll < 0.33) {
-                sizeVal = 60; // Exakt gleich groß
+                sizeVal = 60; // Exakt gleich groß wie das Target
             } else if (sizeRoll < 0.50) {
                 sizeVal = 70 + Math.random() * 15; // Etwas größer
             } else {
@@ -282,15 +274,16 @@
 
         function setDifficulty(level) {
             currentDifficulty = level;
-            document.getElementById('btn-diff-1').classList.toggle('active', level === 1);
-            document.getElementById('btn-diff-2').classList.toggle('active', level === 2);
-            document.getElementById('btn-diff-3').classList.toggle('active', level === 3);
+            for(let i=1; i<=4; i++) {
+                document.getElementById('btn-diff-'+i).classList.toggle('active', level === i);
+            }
             randomizeControls();
         }
 
         document.getElementById('btn-diff-1').addEventListener('click', () => setDifficulty(1));
         document.getElementById('btn-diff-2').addEventListener('click', () => setDifficulty(2));
         document.getElementById('btn-diff-3').addEventListener('click', () => setDifficulty(3));
+        document.getElementById('btn-diff-4').addEventListener('click', () => setDifficulty(4));
 
         document.getElementById('btn-1p').addEventListener('click', () => {
             is2Player = false;
@@ -318,20 +311,27 @@
             colorTr = availableColors[1];
             colorCi = availableColors[2];
 
-            if (currentDifficulty === 3) {
+            if (currentDifficulty === 4) {
                 let p1Keys = ['a', 's', 'd'].sort(() => 0.5 - Math.random());
                 p1SquareKey = p1Keys[0]; p1TriangleKey = p1Keys[1]; p1CircleKey = p1Keys[2];
 
                 let p2Keys = ['ArrowLeft', 'ArrowDown', 'ArrowRight'].sort(() => 0.5 - Math.random());
                 p2SquareKey = p2Keys[0]; p2TriangleKey = p2Keys[1]; p2CircleKey = p2Keys[2];
-            } else if (currentDifficulty === 2) {
+            } else if (currentDifficulty === 3) {
                 let p1Keys = ['a', 'd'].sort(() => 0.5 - Math.random());
                 p1SquareKey = p1Keys[0]; p1TriangleKey = p1Keys[1]; 
 
                 let p2Keys = ['ArrowLeft', 'ArrowRight'].sort(() => 0.5 - Math.random());
                 p2SquareKey = p2Keys[0]; p2TriangleKey = p2Keys[1]; 
+            } else if (currentDifficulty === 2) {
+                // Level 2: 2 Formen, aber exakt dieselbe Taste für beide
+                let p1Keys = ['a', 's', 'd'].sort(() => 0.5 - Math.random());
+                p1SquareKey = p1Keys[0]; p1TriangleKey = p1Keys[0]; 
+
+                let p2Keys = ['ArrowLeft', 'ArrowDown', 'ArrowRight'].sort(() => 0.5 - Math.random());
+                p2SquareKey = p2Keys[0]; p2TriangleKey = p2Keys[0]; 
             } else {
-                // Bei Lvl 1: Exakt eine spezifische Taste aus den 3 möglichen wählen
+                // Level 1: 1 Form, 1 Taste
                 let p1Keys = ['a', 's', 'd'].sort(() => 0.5 - Math.random());
                 p1SquareKey = p1Keys[0];
                 
@@ -344,14 +344,16 @@
 
         function updateUIForControls() {
             const getZoneName = (k, pName) => {
-                if (currentDifficulty === 1) return `Gesamte Bildschirmhälfte (${pName})`;
-                if (currentDifficulty === 2) {
+                if (currentDifficulty <= 2) return `Gesamte Bildschirmhälfte (${pName})`;
+                if (currentDifficulty === 3) {
                     if (k === 'a' || k === 'ArrowLeft') return `Obere Hälfte (${pName})`;
                     if (k === 'd' || k === 'ArrowRight') return `Untere Hälfte (${pName})`;
                 }
-                if (k === 'a' || k === 'ArrowLeft') return `Oberes Drittel (${pName})`;
-                if (k === 's' || k === 'ArrowDown') return `Mittleres Drittel (${pName})`;
-                if (k === 'd' || k === 'ArrowRight') return `Unteres Drittel (${pName})`;
+                if (currentDifficulty === 4) {
+                    if (k === 'a' || k === 'ArrowLeft') return `Oberes Drittel (${pName})`;
+                    if (k === 's' || k === 'ArrowDown') return `Mittleres Drittel (${pName})`;
+                    if (k === 'd' || k === 'ArrowRight') return `Unteres Drittel (${pName})`;
+                }
                 return '';
             };
             const getKeyName = (k) => {
@@ -361,9 +363,14 @@
                 return (k || '').toUpperCase();
             };
 
-            // Touch-Zonen anpassen (Mitte bei Lvl 2 verstecken)
-            document.getElementById('touch-p1-middle').classList.toggle('hidden', currentDifficulty === 2);
-            document.getElementById('touch-p2-middle').classList.toggle('hidden', currentDifficulty === 2);
+            // Touch-Zonen anpassen: Mitte und Unten verstecken bei Lvl 1 & 2 (damit Oben = 100%)
+            // Bei Lvl 3: Mitte verstecken (damit Oben und Unten = je 50%)
+            const useOneZone = currentDifficulty <= 2;
+            const useTwoZones = currentDifficulty === 3;
+            document.getElementById('touch-p1-middle').classList.toggle('hidden', useOneZone || useTwoZones);
+            document.getElementById('touch-p1-bottom').classList.toggle('hidden', useOneZone);
+            document.getElementById('touch-p2-middle').classList.toggle('hidden', useOneZone || useTwoZones);
+            document.getElementById('touch-p2-bottom').classList.toggle('hidden', useOneZone);
 
             // Textfarben und Namen
             document.getElementById('title-sq').className = colorSq.textClass;
@@ -375,6 +382,7 @@
             document.getElementById('title-ci').className = colorCi.textClass;
             document.getElementById('title-ci').textContent = `${colorCi.name} Kreis`;
             
+            const liSq = document.getElementById('li-rule-sq');
             const liTr = document.getElementById('li-rule-tr');
             const liCi = document.getElementById('li-rule-ci');
             
@@ -387,29 +395,20 @@
             const txtP1Ci = `S1 (Linker Spieler): Taste <b>${getKeyName(p1CircleKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p1CircleKey, 'Links')}</span>`;
             const txtP2Ci = `S2 (Rechter Spieler): Taste <b>${getKeyName(p2CircleKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p2CircleKey, 'Rechts')}</span>`;
 
-            if (currentDifficulty === 1) {
-                liTr.classList.add('hidden');
-                liCi.classList.add('hidden');
-                document.getElementById('rule-sq').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorSq.textClass}">${txtP1Sq}</div><div class="${colorSq.textClass}">${txtP2Sq}</div></div>`;
-            } else if (currentDifficulty === 2) {
-                liTr.classList.remove('hidden');
-                liCi.classList.add('hidden');
-                document.getElementById('rule-sq').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorSq.textClass}">${txtP1Sq}</div><div class="${colorSq.textClass}">${txtP2Sq}</div></div>`;
-                document.getElementById('rule-tr').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorTr.textClass}">${txtP1Tr}</div><div class="${colorTr.textClass}">${txtP2Tr}</div></div>`;
-            } else {
-                liTr.classList.remove('hidden');
-                liCi.classList.remove('hidden');
-                document.getElementById('rule-sq').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorSq.textClass}">${txtP1Sq}</div><div class="${colorSq.textClass}">${txtP2Sq}</div></div>`;
-                document.getElementById('rule-tr').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorTr.textClass}">${txtP1Tr}</div><div class="${colorTr.textClass}">${txtP2Tr}</div></div>`;
-                document.getElementById('rule-ci').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorCi.textClass}">${txtP1Ci}</div><div class="${colorCi.textClass}">${txtP2Ci}</div></div>`;
-            }
+            liSq.classList.remove('hidden');
+            liTr.classList.toggle('hidden', currentDifficulty === 1);
+            liCi.classList.toggle('hidden', currentDifficulty !== 4);
+
+            document.getElementById('rule-sq').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorSq.textClass}">${txtP1Sq}</div><div class="${colorSq.textClass}">${txtP2Sq}</div></div>`;
+            document.getElementById('rule-tr').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorTr.textClass}">${txtP1Tr}</div><div class="${colorTr.textClass}">${txtP2Tr}</div></div>`;
+            document.getElementById('rule-ci').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorCi.textClass}">${txtP1Ci}</div><div class="${colorCi.textClass}">${txtP2Ci}</div></div>`;
         }
 
         // --- Spiel Ablauf ---
 
         function startGame() {
             uiMenu.classList.add('hidden');
-            touchLayer.classList.remove('hidden'); // Touchzonen aktivieren
+            touchLayer.classList.remove('hidden'); 
             statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
             statsP2 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
             currentTrial = 0;
@@ -426,7 +425,6 @@
             p1EarlyPressed = false;
             p2EarlyPressed = false;
             let delay = 1500 + Math.random() * 2000;
-            // timeoutId wird hier NICHT genutzt, es wird nur intern verschoben.
             setTimeout(showStimulus, delay);
         }
 
@@ -441,7 +439,7 @@
             } else {
                 if (currentDifficulty === 1) {
                     currentTargetType = STIMULUS_SQUARE;
-                } else if (currentDifficulty === 2) {
+                } else if (currentDifficulty === 2 || currentDifficulty === 3) {
                     currentTargetType = (Math.random() < 0.60) ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
                 } else {
                     let r = Math.random();
@@ -452,7 +450,6 @@
             }
             
             let timeLimit = currentTargetType === STIMULUS_NOGO ? 1500 : 2500;
-            // Starte einen Timer. Wenn er auslöst, übergeben wir "true" für TimeOut
             timeoutId = setTimeout(() => checkRoundEnd(true), timeLimit);
         }
 
@@ -463,7 +460,7 @@
             let p2Done = p2Responded || !is2Player;
             
             if (isTimeout) {
-                // Zeit abgelaufen: Prüfen, ob jemand verpasst hat (außer es war No-Go, dann ist Nicht-Drücken richtig)
+                // Zeit abgelaufen: Prüfen, ob jemand verpasst hat
                 if (currentTargetType !== STIMULUS_NOGO) {
                     if (!p1Responded) { statsP1.missErrors++; showFeedback(1, "Verpasst!"); }
                     if (is2Player && !p2Responded) { statsP2.missErrors++; showFeedback(2, "Verpasst!"); }
@@ -493,10 +490,9 @@
             const el = document.getElementById(player === 1 ? 'feedback-p1' : 'feedback-p2');
             if (!el) return;
             
-            // Zentrierung und Positionierung je nach Modus
             if (!is2Player && player === 1) {
                 el.style.left = '50%';
-                el.style.top = '30%'; // Etwas über dem Zentrum
+                el.style.top = '30%'; 
             } else {
                 el.style.left = player === 1 ? '25%' : '75%';
                 el.style.top = '30%';
@@ -505,23 +501,18 @@
             el.textContent = text;
             el.style.color = color;
             
-            // Animation hart zurücksetzen, falls man mehrfach schnell drückt
             el.style.transition = 'none';
             el.style.opacity = 1;
             
-            // Reflow erzwingen
-            void el.offsetWidth;
+            void el.offsetWidth; // Reflow erzwingen
             
-            // CSS Transition wieder aktivieren für sanftes Fade-Out
             el.style.transition = 'opacity 0.4s ease-out';
             
-            // Vorherigen Timeout löschen und neuen starten
             if (el.hideTimeout) clearTimeout(el.hideTimeout);
             el.hideTimeout = setTimeout(() => { el.style.opacity = 0; }, 800);
         }
 
         function handleInput(player, type) {
-            // "Zu früh" Drücker im Zwischenbildschirm: Zählt als Fehler, sperrt aber NICHT den eigentlichen Versuch
             if (gameState === STATE_INTERTRIAL) {
                 if (player === 1 && !p1EarlyPressed) { 
                     statsP1.impulseErrors++; p1EarlyPressed = true; showFeedback(1, "Zu früh!"); 
@@ -554,8 +545,29 @@
                 }
             }
             
-            // Aufruf von checkRoundEnd(false), weil der Trigger nicht der Timeout war
             checkRoundEnd(false);
+        }
+
+        // --- Steuerung Mapping Helper ---
+        // Evaluiert, ob die gedrückte Taste im aktuellen Level für die angezeigte Form gültig ist
+        function getPlayerInputType(k, pSqKey, pTrKey, pCiKey, difficulty, expectedType) {
+            if (difficulty === 1) {
+                return (k === pSqKey) ? expectedType : 999;
+            } else if (difficulty === 2) {
+                // Sq und Tr teilen sich in Level 2 denselben Key. 
+                // Wenn die Form valide ist (Sq oder Tr) und die Taste stimmt, senden wir die erwartete Form zurück, damit es "Richtig" ergibt.
+                if (k === pSqKey) return (expectedType === STIMULUS_TRIANGLE ? STIMULUS_TRIANGLE : STIMULUS_SQUARE);
+                return 999;
+            } else if (difficulty === 3) {
+                if (k === pSqKey) return STIMULUS_SQUARE;
+                if (k === pTrKey) return STIMULUS_TRIANGLE;
+                return 999;
+            } else if (difficulty === 4) {
+                if (k === pSqKey) return STIMULUS_SQUARE;
+                if (k === pTrKey) return STIMULUS_TRIANGLE;
+                if (k === pCiKey) return STIMULUS_CIRCLE;
+                return 999;
+            }
         }
 
         // Tasten-Input
@@ -564,23 +576,17 @@
             const kLow = e.key.toLowerCase();
             const kRaw = e.key; 
 
-            // Spieler 1 Layout
             const p1Set = ['a', 's', 'd'];
             if (p1Set.includes(kLow)) {
-                if (kLow === p1SquareKey) handleInput(1, STIMULUS_SQUARE);
-                else if (kLow === p1TriangleKey && currentDifficulty >= 2) handleInput(1, STIMULUS_TRIANGLE);
-                else if (kLow === p1CircleKey && currentDifficulty === 3) handleInput(1, STIMULUS_CIRCLE);
-                else handleInput(1, 999); // 999 = Ungültige Form -> Zählt als Fehler
+                let typeSent = getPlayerInputType(kLow, p1SquareKey, p1TriangleKey, p1CircleKey, currentDifficulty, currentTargetType);
+                handleInput(1, typeSent);
             }
             
-            // Spieler 2 Layout
             const p2Set = ['ArrowLeft', 'ArrowDown', 'ArrowRight'];
             if (p2Set.includes(kRaw)) {
                 const playerIdx = is2Player ? 2 : 1;
-                if (kRaw === p2SquareKey) handleInput(playerIdx, STIMULUS_SQUARE);
-                else if (kRaw === p2TriangleKey && currentDifficulty >= 2) handleInput(playerIdx, STIMULUS_TRIANGLE);
-                else if (kRaw === p2CircleKey && currentDifficulty === 3) handleInput(playerIdx, STIMULUS_CIRCLE);
-                else handleInput(playerIdx, 999); // 999 = Ungültige Form -> Zählt als Fehler
+                let typeSent = getPlayerInputType(kRaw, p2SquareKey, p2TriangleKey, p2CircleKey, currentDifficulty, currentTargetType);
+                handleInput(playerIdx, typeSent);
             }
         });
 
@@ -593,12 +599,12 @@
                 if (e.cancelable) e.preventDefault();
                 let type = null;
                 
-                if (currentDifficulty === 1) {
-                    type = STIMULUS_SQUARE; 
-                } else if (currentDifficulty === 2) {
+                if (currentDifficulty <= 2) {
+                    type = (currentTargetType === STIMULUS_TRIANGLE) ? STIMULUS_TRIANGLE : STIMULUS_SQUARE; 
+                } else if (currentDifficulty === 3) {
                     if (zonePos === 'top') type = STIMULUS_SQUARE;
                     if (zonePos === 'bottom') type = STIMULUS_TRIANGLE;
-                } else {
+                } else if (currentDifficulty === 4) {
                     if (zonePos === 'top') type = STIMULUS_SQUARE;
                     if (zonePos === 'middle') type = STIMULUS_TRIANGLE;
                     if (zonePos === 'bottom') type = STIMULUS_CIRCLE;
