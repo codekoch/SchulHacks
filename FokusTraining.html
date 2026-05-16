@@ -100,6 +100,10 @@
         </div>
     </div>
 
+    <!-- Feedback Layer -->
+    <div id="feedback-p1" class="absolute transform -translate-x-1/2 -translate-y-1/2 text-3xl font-bold opacity-0 pointer-events-none z-30 drop-shadow-md" style="text-shadow: 0px 4px 10px rgba(0,0,0,0.8);"></div>
+    <div id="feedback-p2" class="absolute transform -translate-x-1/2 -translate-y-1/2 text-3xl font-bold opacity-0 pointer-events-none z-30 drop-shadow-md" style="text-shadow: 0px 4px 10px rgba(0,0,0,0.8);"></div>
+
     <script>
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
@@ -148,13 +152,12 @@
         let currentDifficulty = 3;
         let currentTrial = 0;
         
-        let statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0 };
-        let statsP2 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0 };
+        let statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
+        let statsP2 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
 
         let currentTargetType = 0;
         let currentNoGoType = 0;
         let timeStimulusShown = 0;
-        let nextStimulusTime = 0;
         let timeoutId = null;
 
         let p1Responded = false;
@@ -162,7 +165,6 @@
 
         let particles = [];
         let wanderer = null;
-        let activeFeedback = { p1: null, p2: null };
 
         // --- Klassen & Logik ---
 
@@ -390,9 +392,8 @@
         function startGame() {
             uiMenu.classList.add('hidden');
             touchLayer.classList.remove('hidden'); // Touchzonen aktivieren
-            statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0 };
-            statsP2 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0 };
-            activeFeedback = { p1: null, p2: null };
+            statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
+            statsP2 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
             currentTrial = 0;
             particles = [];
             for (let i=0; i<25; i++) particles.push(createParticle());
@@ -405,7 +406,8 @@
             p1Responded = false;
             p2Responded = false;
             let delay = 1500 + Math.random() * 2000;
-            timeoutId = setTimeout(showStimulus, delay);
+            // timeoutId wird hier NICHT genutzt, es wird nur intern verschoben.
+            setTimeout(showStimulus, delay);
         }
 
         function showStimulus() {
@@ -430,47 +432,87 @@
             }
             
             let timeLimit = currentTargetType === STIMULUS_NOGO ? 1500 : 2500;
-            timeoutId = setTimeout(checkRoundEnd, timeLimit);
+            // Starte einen Timer. Wenn er auslöst, übergeben wir "true" für TimeOut
+            timeoutId = setTimeout(() => checkRoundEnd(true), timeLimit);
         }
 
-        function checkRoundEnd() {
+        function checkRoundEnd(isTimeout = false) {
             if (gameState !== STATE_STIMULUS) return;
             
-            // Wenn beide gespielt haben oder die Zeit abgelaufen ist
             let p1Done = p1Responded || !is2Player;
-            let p2Done = p2Responded;
+            let p2Done = p2Responded || !is2Player;
             
-            // Bei einem No-Go Trial ist "Nicht-Drücken" das korrekte Verhalten
-            if (currentTargetType === STIMULUS_NOGO) {
-                if (!p1Responded) statsP1.correct++;
-                if (is2Player && !p2Responded) statsP2.correct++;
-            }
-            
-            if ((p1Done && p2Done) || timeoutId) {
-                clearTimeout(timeoutId);
-                currentTrial++;
-                if (currentTrial >= MAX_TRIALS) {
-                    endGame();
+            if (isTimeout) {
+                // Zeit abgelaufen: Prüfen, ob jemand verpasst hat (außer es war No-Go, dann ist Nicht-Drücken richtig)
+                if (currentTargetType !== STIMULUS_NOGO) {
+                    if (!p1Responded) { statsP1.missErrors++; showFeedback(1, "Verpasst!"); }
+                    if (is2Player && !p2Responded) { statsP2.missErrors++; showFeedback(2, "Verpasst!"); }
                 } else {
-                    scheduleNextTrial();
+                    if (!p1Responded) statsP1.correct++;
+                    if (is2Player && !p2Responded) statsP2.correct++;
                 }
+                finalizeRound();
+            } else if (p1Done && p2Done) {
+                // Beide Spieler haben VOR dem Timeout gedrückt.
+                finalizeRound();
+            }
+        }
+
+        function finalizeRound() {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+            currentTrial++;
+            if (currentTrial >= MAX_TRIALS) {
+                endGame();
+            } else {
+                scheduleNextTrial();
             }
         }
 
         function showFeedback(player, text, color = '#f87171') {
-            const fb = { text, color, expires: performance.now() + 1000 };
-            if (player === 1) activeFeedback.p1 = fb;
-            else activeFeedback.p2 = fb;
+            const el = document.getElementById(player === 1 ? 'feedback-p1' : 'feedback-p2');
+            if (!el) return;
+            
+            // Zentrierung und Positionierung je nach Modus
+            if (!is2Player && player === 1) {
+                el.style.left = '50%';
+                el.style.top = '30%'; // Etwas über dem Zentrum
+            } else {
+                el.style.left = player === 1 ? '25%' : '75%';
+                el.style.top = '30%';
+            }
+
+            el.textContent = text;
+            el.style.color = color;
+            
+            // Animation hart zurücksetzen, falls man mehrfach schnell drückt
+            el.style.transition = 'none';
+            el.style.opacity = 1;
+            
+            // Reflow erzwingen
+            void el.offsetWidth;
+            
+            // CSS Transition wieder aktivieren für sanftes Fade-Out
+            el.style.transition = 'opacity 0.4s ease-out';
+            
+            // Vorherigen Timeout löschen und neuen starten
+            if (el.hideTimeout) clearTimeout(el.hideTimeout);
+            el.hideTimeout = setTimeout(() => { el.style.opacity = 0; }, 800);
         }
 
         function handleInput(player, type) {
-            if (gameState !== STATE_STIMULUS) {
-                if (gameState === STATE_INTERTRIAL) {
-                    if (player === 1 && !p1Responded) { statsP1.impulseErrors++; p1Responded = true; }
-                    if (player === 2 && !p2Responded && is2Player) { statsP2.impulseErrors++; p2Responded = true; }
+            // "Zu früh" Drücker im Zwischenbildschirm bestrafen
+            if (gameState === STATE_INTERTRIAL) {
+                if (player === 1 && !p1Responded) { 
+                    statsP1.impulseErrors++; p1Responded = true; showFeedback(1, "Zu früh!"); 
+                }
+                if (player === 2 && !p2Responded && is2Player) { 
+                    statsP2.impulseErrors++; p2Responded = true; showFeedback(2, "Zu früh!"); 
                 }
                 return;
             }
+            
+            if (gameState !== STATE_STIMULUS) return;
             
             if (currentTargetType === STIMULUS_NOGO) {
                 if (player === 1 && !p1Responded) {
@@ -492,8 +534,8 @@
                 }
             }
             
-            let p1Done = p1Responded || !is2Player;
-            if (p1Done && (p2Responded || !is2Player)) checkRoundEnd();
+            // Aufruf von checkRoundEnd(false), weil der Trigger nicht der Timeout war
+            checkRoundEnd(false);
         }
 
         // Tasten-Input
@@ -566,22 +608,26 @@
             
             const createStatsHTML = (name, stats) => {
                 let avgRt = stats.rt.length > 0 ? (stats.rt.reduce((a,b)=>a+b,0)/stats.rt.length).toFixed(0) : "Keine";
+                let bestRt = stats.rt.length > 0 ? Math.min(...stats.rt).toFixed(0) : "Keine";
                 let accuracy = Math.round((stats.correct / MAX_TRIALS) * 100);
                 
                 let evalText = "";
                 if (stats.impulseErrors > 2) evalText = "<span class='text-red-400'>Impulsiv. Fokus verlagert sich zu schnell.</span>";
-                else if (avgRt < 450 && accuracy > 85) evalText = "<span class='text-green-400'>Exzellente Fixationskontrolle!</span>";
+                else if (stats.missErrors > 2) evalText = "<span class='text-red-400'>Unaufmerksam. Reize werden verpasst.</span>";
+                else if (avgRt !== "Keine" && avgRt < 450 && accuracy > 85) evalText = "<span class='text-green-400'>Exzellente Fixationskontrolle!</span>";
                 else evalText = "<span class='text-yellow-400'>Augen sind dem Wanderer gefolgt (Zeitverlust).</span>";
 
                 return `
-                    <div class="bg-slate-800 p-4 rounded-lg border ${accuracy > 80 ? 'border-green-500' : 'border-slate-600'}">
-                        <h3 class="font-bold text-xl mb-3 text-blue-300">${name}</h3>
+                    <div class="bg-slate-800 p-4 rounded-lg border ${accuracy > 80 ? 'border-green-500' : 'border-slate-600'} text-left">
+                        <h3 class="font-bold text-xl mb-3 text-blue-300 text-center">${name}</h3>
                         <p class="mb-1 text-slate-300">Richtig gelöst: <b class="text-white">${stats.correct} / ${MAX_TRIALS}</b></p>
                         <p class="mb-1 text-slate-300">Reaktionszeit (Ø): <b class="text-white">${avgRt} ms</b></p>
+                        <p class="mb-1 text-slate-300">Spitzenwert (Schnellste): <b class="text-white">${bestRt} ms</b></p>
                         <hr class="border-slate-600 my-2">
                         <p class="mb-1 text-slate-300 text-sm">Form-Fehler (Falsche Taste): <b class="text-red-300">${stats.formErrors}</b></p>
+                        <p class="mb-1 text-slate-300 text-sm">Ausgelassen (Verpasst): <b class="text-red-300">${stats.missErrors}</b></p>
                         <p class="mb-3 text-slate-300 text-sm">Impuls-Fehler (Zu früh / No-Go): <b class="text-red-300">${stats.impulseErrors}</b></p>
-                        <p class="text-sm italic">${evalText}</p>
+                        <p class="text-sm italic text-center mt-2">${evalText}</p>
                     </div>
                 `;
             };
@@ -664,34 +710,6 @@
                     }
                 }
             }
-            
-            // Draw Feedback on Canvas
-            const now = performance.now();
-            ctx.font = "bold 28px sans-serif";
-            ctx.textAlign = "center";
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = '#0f172a';
-
-            if (activeFeedback.p1 && now < activeFeedback.p1.expires) {
-                let alpha = Math.min(1, (activeFeedback.p1.expires - now) / 300);
-                ctx.globalAlpha = Math.max(0, alpha);
-                ctx.fillStyle = activeFeedback.p1.color;
-                let x = is2Player ? canvas.width * 0.25 : canvas.width / 2;
-                let y = canvas.height / 2 - 80;
-                ctx.strokeText(activeFeedback.p1.text, x, y);
-                ctx.fillText(activeFeedback.p1.text, x, y);
-            }
-            
-            if (is2Player && activeFeedback.p2 && now < activeFeedback.p2.expires) {
-                let alpha = Math.min(1, (activeFeedback.p2.expires - now) / 300);
-                ctx.globalAlpha = Math.max(0, alpha);
-                ctx.fillStyle = activeFeedback.p2.color;
-                let x = canvas.width * 0.75;
-                let y = canvas.height / 2 - 80;
-                ctx.strokeText(activeFeedback.p2.text, x, y);
-                ctx.fillText(activeFeedback.p2.text, x, y);
-            }
-            ctx.globalAlpha = 1.0;
 
             requestAnimationFrame(gameLoop);
         }
