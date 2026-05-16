@@ -3,712 +3,677 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fokus-Wächter - Aufmerksamkeitstraining</title>
+    <title>Fokus-Wächter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { margin: 0; overflow: hidden; background-color: #0f172a; touch-action: none; font-family: sans-serif; }
+        #game-canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: white;
-            overflow: hidden;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        canvas {
-            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
-            border-radius: 12px;
-            max-width: 100%;
-            max-height: 100%;
-            cursor: crosshair;
-        }
-
-        .ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            pointer-events: none; 
-            z-index: 50;
-        }
-
-        .panel {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 2rem;
-            border-radius: 1rem;
-            text-align: center;
-            pointer-events: auto;
-            max-width: 600px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            font-weight: 600;
-            padding: 0.75rem 2rem;
-            border-radius: 9999px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);
-            pointer-events: auto;
-            font-size: 1.1rem;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.5);
-        }
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        .ui-content { pointer-events: auto; background: rgba(30, 41, 59, 0.95); padding: 2rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 90vw; width: 600px; max-height: 95vh; overflow-y: auto; text-align: center; }
         
-        .btn:active {
-            transform: translateY(1px);
-        }
+        .btn { background-color: #3b82f6; color: white; font-weight: bold; padding: 0.75rem 1.5rem; border-radius: 0.5rem; transition: background-color 0.2s; cursor: pointer; }
+        .btn:hover { background-color: #2563eb; }
+        .btn:active { transform: scale(0.95); }
+        .mode-btn { background-color: #475569; }
+        .mode-btn.active { background-color: #10b981; }
 
-        .touch-zone {
-            pointer-events: auto;
-            background: transparent;
-            display: flex;
-            font-size: 1.5rem;
-            font-weight: bold;
-            transition: background 0.1s;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: none;
-        }
-        
-        .touch-zone:active, .touch-zone.active-tap {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        
-        .mode-btn { opacity: 0.5; transform: scale(0.9); }
-        .mode-btn.active { opacity: 1; transform: scale(1); border: 2px solid #60a5fa; box-shadow: 0 0 15px rgba(59,130,246,0.5); }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .hidden { display: none !important; }
+        /* Touch Zones für iPads/Tablets */
+        #touch-layer { position: absolute; inset: 0; z-index: 10; display: flex; pointer-events: none; }
+        .touch-column { width: 50%; height: 100%; display: flex; flex-direction: column; pointer-events: auto; }
+        .touch-zone { flex: 1; border: 1px solid rgba(255,255,255,0.05); opacity: 0; transition: opacity 0.1s; cursor: pointer; }
+        .touch-zone.active-tap { background-color: rgba(255, 255, 255, 0.15); opacity: 1; }
     </style>
 </head>
-<body>
+<body class="text-slate-100">
 
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
+    <canvas id="game-canvas"></canvas>
 
-        <!-- Main Menu -->
-        <div id="ui-menu" class="ui-layer">
-            <div class="panel">
-                <h1 class="text-3xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Fokus-Wächter</h1>
-                <p class="mb-4 text-slate-300">Lesen Sie sich die Spielregeln genau durch. Sie können bei jedem Neustart geringfügig variieren.</p>
-                
-                <div class="flex gap-4 justify-center mb-4">
-                    <button id="btn-1p" class="btn mode-btn active">1 Spieler</button>
-                    <button id="btn-2p" class="btn mode-btn">2 Spieler</button>
-                </div>
-
-                <div class="text-left bg-slate-800/50 p-4 rounded-lg mb-6 text-sm text-slate-200">
-                    <h3 class="font-bold text-white mb-2">Spielregeln:</h3>
-                    <ul class="list-disc pl-5 space-y-2">
-                        <li>Schauen Sie <b>immer</b> auf das Kreuz in der Mitte. Ignorieren Sie fliegende Objekte.</li>
-                        <li>Wenn im Zentrum ein <b>blaues Quadrat</b> erscheint: <br><span id="rule-blue" class="text-blue-300 font-mono bg-black/30 px-2 py-1 rounded mt-1 inline-block">...</span></li>
-                        <li>Wenn im Zentrum ein <b>gelbes Dreieck</b> erscheint: <br><span id="rule-yellow" class="text-yellow-300 font-mono bg-black/30 px-2 py-1 rounded mt-1 inline-block">...</span></li>
-                    </ul>
-                </div>
-
-                <button id="start-btn" class="btn">Training Starten (15 Runden)</button>
-            </div>
+    <!-- Unsichtbare Touch-Zonen über dem Canvas -->
+    <div id="touch-layer" class="hidden">
+        <!-- Linker Spieler (S1) -->
+        <div class="touch-column">
+            <div id="touch-p1-top" class="touch-zone"></div>
+            <div id="touch-p1-middle" class="touch-zone"></div>
+            <div id="touch-p1-bottom" class="touch-zone"></div>
         </div>
-
-        <!-- In-Game HUD -->
-        <div id="ui-hud" class="ui-layer hidden">
-            <div class="absolute top-4 left-4 text-slate-400 font-bold tracking-wider">
-                RUNDE: <span id="hud-round" class="text-white">1/15</span>
-            </div>
-            
-            <!-- Player 1 Feedback -->
-            <div id="feedback-p1" class="absolute top-1/3 left-1/4 transform -translate-x-1/2 -translate-y-1/2 text-3xl font-bold transition-opacity duration-300 opacity-0 text-center">
-                <span class="text-sm text-slate-400 block mb-1">Spieler 1</span>
-                <span class="msg bg-black/50 px-4 py-2 rounded-xl backdrop-blur-sm">Gut!</span>
-            </div>
-            
-            <!-- Player 2 Feedback -->
-            <div id="feedback-p2" class="absolute top-1/3 right-1/4 transform translate-x-1/2 -translate-y-1/2 text-3xl font-bold transition-opacity duration-300 opacity-0 text-center hidden">
-                <span class="text-sm text-slate-400 block mb-1">Spieler 2</span>
-                <span class="msg bg-black/50 px-4 py-2 rounded-xl backdrop-blur-sm">Gut!</span>
-            </div>
-        </div>
-
-        <!-- Touch Controls for iPad/Mobile -->
-        <div id="touch-controls" class="hidden absolute top-0 left-0 w-full h-full z-20 pointer-events-none flex flex-row">
-            <!-- P1 Left Side -->
-            <div class="relative w-1/2 h-full flex flex-col z-10">
-                <div id="touch-p1-top" class="touch-zone flex-1 flex items-start justify-start p-2 sm:p-6"></div>
-                <div id="touch-p1-bottom" class="touch-zone flex-1 flex items-end justify-start p-2 sm:p-6"></div>
-            </div>
-            <!-- P2 Right Side -->
-            <div class="relative w-1/2 h-full flex flex-col z-10 hidden" id="touch-p2-container">
-                <div id="touch-p2-top" class="touch-zone flex-1 flex items-start justify-end p-2 sm:p-6"></div>
-                <div id="touch-p2-bottom" class="touch-zone flex-1 flex items-end justify-end p-2 sm:p-6"></div>
-            </div>
-        </div>
-
-        <!-- Game Over / Results -->
-        <div id="ui-results" class="ui-layer hidden">
-            <div class="panel" style="max-width: 800px; width: 90%;">
-                <h2 class="text-3xl font-bold mb-2 text-white">Wissenschaftliche Auswertung</h2>
-                <p class="mb-6 text-slate-300">Reaktionszeiten und Inhibitionskontrolle:</p>
-                
-                <div id="results-container" class="flex flex-col md:flex-row gap-4 mb-6 justify-center">
-                    <!-- Dynamic injection -->
-                </div>
-
-                <p id="result-evaluation" class="mb-6 italic text-slate-300 text-sm">...</p>
-
-                <button id="restart-btn" class="btn">Neuer Test (Tasten werden gemischt)</button>
-            </div>
+        <!-- Rechter Spieler (S2) -->
+        <div class="touch-column">
+            <div id="touch-p2-top" class="touch-zone"></div>
+            <div id="touch-p2-middle" class="touch-zone"></div>
+            <div id="touch-p2-bottom" class="touch-zone"></div>
         </div>
     </div>
 
+    <div id="ui-menu" class="ui-layer">
+        <div class="ui-content border border-slate-700">
+            <h1 class="text-3xl font-bold mb-4 text-white">Fokus-Wächter</h1>
+            
+            <div class="bg-blue-900/40 border border-blue-500 text-blue-200 p-4 rounded-lg mb-6 text-sm shadow-lg text-left">
+                <strong class="text-white block mb-1 text-base">🎯 WICHTIGE AUFGABE:</strong>
+                Fixieren Sie durchgehend das Zentrum! Drücken Sie <b>NUR</b> für die exakt unten genannten Kombinationen aus Form und Farbe.<br><br>
+                Reagieren Sie bei allen anderen auftauchenden Symbolen, falschen Farben oder sonstigen Ablenkungen (wie dem roten Punkt) absolut <b>NICHT</b>!
+                <br><br><span class="text-yellow-300"><b>Achtung:</b> Bitte vor jedem Start gut durchlesen, da die Farben, Formen und Tasten bei jedem Spiel rotieren.</span>
+            </div>
+
+            <div class="flex gap-2 justify-center mb-4 flex-wrap">
+                <button id="btn-diff-1" class="btn mode-btn text-sm px-3 py-2">Level 1 (1 Form)</button>
+                <button id="btn-diff-2" class="btn mode-btn text-sm px-3 py-2">Level 2 (2 Formen)</button>
+                <button id="btn-diff-3" class="btn mode-btn active text-sm px-3 py-2">Level 3 (3 Formen)</button>
+            </div>
+
+            <div class="flex gap-4 justify-center mb-6">
+                <button id="btn-1p" class="btn mode-btn active">1 Spieler</button>
+                <button id="btn-2p" class="btn mode-btn">2 Spieler</button>
+            </div>
+
+            <div class="text-left bg-slate-800/80 p-4 rounded-lg mb-6 text-sm text-slate-200 border border-slate-600">
+                <ul class="space-y-3">
+                    <li id="li-rule-sq">
+                        <b id="title-sq">...</b><br>
+                        <div id="rule-sq" class="bg-black/40 px-2 py-1.5 rounded mt-1 inline-block border border-slate-700 w-full">...</div>
+                    </li>
+                    <li id="li-rule-tr">
+                        <b id="title-tr">...</b><br>
+                        <div id="rule-tr" class="bg-black/40 px-2 py-1.5 rounded mt-1 inline-block border border-slate-700 w-full">...</div>
+                    </li>
+                    <li id="li-rule-ci">
+                        <b id="title-ci">...</b><br>
+                        <div id="rule-ci" class="bg-black/40 px-2 py-1.5 rounded mt-1 inline-block border border-slate-700 w-full">...</div>
+                    </li>
+                </ul>
+            </div>
+
+            <button id="start-btn" class="btn w-full text-lg shadow-lg shadow-blue-500/20">Training Starten (15 Runden)</button>
+        </div>
+    </div>
+
+    <div id="ui-results" class="ui-layer hidden">
+        <div class="ui-content border border-slate-700">
+            <h2 class="text-3xl font-bold mb-6 text-white">Auswertung</h2>
+            
+            <div id="stats-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- Stats werden dynamisch eingefügt -->
+            </div>
+
+            <button id="restart-btn" class="btn w-full">Zurück zum Menü</button>
+        </div>
+    </div>
+
+    <!-- Feedback Layer -->
+    <div id="feedback-p1" class="absolute top-1/4 left-1/4 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold opacity-0 transition-opacity duration-200 pointer-events-none z-30 drop-shadow-md"></div>
+    <div id="feedback-p2" class="absolute top-1/4 left-3/4 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold opacity-0 transition-opacity duration-200 pointer-events-none z-30 drop-shadow-md"></div>
+
     <script>
-        const canvas = document.getElementById('gameCanvas');
+        const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
-
-        const uiMenu = document.getElementById('ui-menu');
-        const uiHud = document.getElementById('ui-hud');
-        const uiResults = document.getElementById('ui-results');
-        const touchControls = document.getElementById('touch-controls');
-        const touchP2Container = document.getElementById('touch-p2-container');
-        const hudRound = document.getElementById('hud-round');
         
-        const feedbackP1 = document.getElementById('feedback-p1');
-        const feedbackP2 = document.getElementById('feedback-p2');
-        const msgP1 = feedbackP1.querySelector('.msg');
-        const msgP2 = feedbackP2.querySelector('.msg');
+        const uiMenu = document.getElementById('ui-menu');
+        const uiResults = document.getElementById('ui-results');
+        const touchLayer = document.getElementById('touch-layer');
+        const statsContainer = document.getElementById('stats-container');
 
-        // Game State Constants
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Spiel Konstanten
         const STATE_MENU = 0;
-        const STATE_WAITING = 1; 
-        const STATE_STIMULUS = 2; 
-        const STATE_FEEDBACK = 3; 
-        const STATE_RESULTS = 4;
+        const STATE_INTERTRIAL = 1;
+        const STATE_STIMULUS = 2;
+        const STATE_RESULTS = 3;
 
-        const TOTAL_TRIALS = 15; // Increased for No-Go trials
-        const STIMULUS_SQUARE = 'SQUARE'; 
-        const STIMULUS_TRIANGLE = 'TRIANGLE';
-        const STIMULUS_NOGO = 'NOGO'; // The new Impulse Control trial
+        const STIMULUS_SQUARE = 1;
+        const STIMULUS_TRIANGLE = 2;
+        const STIMULUS_CIRCLE = 3;
+        const STIMULUS_NOGO = 4;
 
-        // Key Mappings
-        let p1SquareKey = 'a';
-        let p1TriangleKey = 'd';
-        let p2SquareKey = 'ArrowLeft';
-        let p2TriangleKey = 'ArrowRight';
+        const MAX_TRIALS = 15;
+
+        // Farben Pool
+        const COLOR_POOL = [
+            { name: 'Blaues', nameUpper: 'BLAUES', hex: '#3b82f6', textClass: 'text-blue-400' },
+            { name: 'Gelbes', nameUpper: 'GELBES', hex: '#eab308', textClass: 'text-yellow-400' },
+            { name: 'Grünes', nameUpper: 'GRÜNES', hex: '#22c55e', textClass: 'text-green-400' },
+            { name: 'Lilanes', nameUpper: 'LILANES', hex: '#a855f7', textClass: 'text-purple-400' },
+            { name: 'Pinkes', nameUpper: 'PINKES', hex: '#ec4899', textClass: 'text-pink-400' },
+            { name: 'Türkises', nameUpper: 'TÜRKISES', hex: '#06b6d4', textClass: 'text-cyan-400' }
+        ];
+
+        let colorSq, colorTr, colorCi;
+        let p1SquareKey, p1TriangleKey, p1CircleKey;
+        let p2SquareKey, p2TriangleKey, p2CircleKey;
 
         let gameState = STATE_MENU;
         let is2Player = false;
+        let currentDifficulty = 3;
         let currentTrial = 0;
         
-        // Stats Objects for cleaner code
-        let p1Stats = { times: [], errors: 0, falseAlarms: 0, best: 9999, responded: false };
-        let p2Stats = { times: [], errors: 0, falseAlarms: 0, best: 9999, responded: false };
-        
-        let stimulusTimer = null;
-        let timeStimulusShown = 0;
-        let currentTargetType = null;
+        let statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0 };
+        let statsP2 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0 };
+
+        let currentTargetType = 0;
         let currentNoGoType = 0;
+        let timeStimulusShown = 0;
+        let nextStimulusTime = 0;
+        let timeoutId = null;
+
+        let p1Responded = false;
+        let p2Responded = false;
 
         let particles = [];
         let wanderer = null;
 
-        // UI Mode Selection
+        // --- Klassen & Logik ---
+
+        class Wanderer {
+            constructor() {
+                this.resetToCenter();
+            }
+
+            resetToCenter() {
+                this.centerX = canvas.width / 2;
+                this.centerY = canvas.height / 2;
+                this.x = this.centerX;
+                this.y = this.centerY;
+                this.size = 18;
+                this.baseSpeed = 3;
+                
+                // Erzeugt eine zufällige, gut sichtbare, leuchtende Farbe
+                this.color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+                
+                const patterns = ['LINEAR', 'SPIRAL', 'SINE', 'ZIGZAG', 'ORBIT_LEAVE'];
+                this.pattern = patterns[Math.floor(Math.random() * patterns.length)];
+                this.angle = Math.random() * Math.PI * 2;
+                this.time = 0;
+                this.radius = 0; // Wichtig: Startet bei 0, damit er exakt aus dem Zentrum herauswächst
+                this.maxLifeTime = 250 + Math.random() * 150; // Notfall-Reset nach bestimmter Zeit
+            }
+
+            update() {
+                this.time += 0.05;
+                
+                if (this.pattern === 'LINEAR') {
+                    this.x += Math.cos(this.angle) * this.baseSpeed;
+                    this.y += Math.sin(this.angle) * this.baseSpeed;
+                } else if (this.pattern === 'SPIRAL') {
+                    this.radius += 1.2;
+                    this.angle += 0.05;
+                    this.x = this.centerX + Math.cos(this.angle) * this.radius;
+                    this.y = this.centerY + Math.sin(this.angle) * this.radius;
+                } else if (this.pattern === 'SINE') {
+                    this.x += Math.cos(this.angle) * this.baseSpeed;
+                    this.y += Math.sin(this.angle) * this.baseSpeed + Math.cos(this.time * 2) * 4;
+                } else if (this.pattern === 'ZIGZAG') {
+                    if (Math.random() < 0.04) this.angle += (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 2.5);
+                    this.x += Math.cos(this.angle) * this.baseSpeed;
+                    this.y += Math.sin(this.angle) * this.baseSpeed;
+                } else if (this.pattern === 'ORBIT_LEAVE') {
+                    // Kreist elliptisch und der Radius wächst kontinuierlich, bis er verschwindet
+                    this.angle += 0.035;
+                    this.radius += 0.6; 
+                    this.x = this.centerX + Math.cos(this.angle) * this.radius;
+                    this.y = this.centerY + Math.sin(this.angle) * (this.radius * 0.6); 
+                }
+
+                // Neustart, wenn er den Bildschirm verlässt ODER seine maximale Lebenszeit erreicht ist
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height || this.time * 20 > this.maxLifeTime) {
+                    this.resetToCenter();
+                }
+            }
+
+            draw(ctx) {
+                // Äußerer Kreis in der zufällig berechneten Farbe
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Innerer weißer Punkt
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function createParticle() {
+            // Alle Stör-Partikel sind nun verschiedene Formen und Farben
+            let shape = [STIMULUS_SQUARE, STIMULUS_TRIANGLE, STIMULUS_CIRCLE][Math.floor(Math.random() * 3)];
+            let colorObj = COLOR_POOL[Math.floor(Math.random() * COLOR_POOL.length)];
+            
+            // Zufällige Lebensdauer zwischen 30 und 120 Frames (kurzes Auftauchen)
+            let maxLife = Math.random() * 90 + 30;
+
+            return {
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 4, // Etwas stärkere Bewegung
+                vy: (Math.random() - 0.5) * 4,
+                size: Math.random() * 35 + 15, // Unterschiedliche Größen
+                shape: shape,
+                color: colorObj.hex,
+                life: maxLife,
+                maxLife: maxLife
+            };
+        }
+
+        // --- Setup & Menü Logik ---
+
+        function setDifficulty(level) {
+            currentDifficulty = level;
+            document.getElementById('btn-diff-1').classList.toggle('active', level === 1);
+            document.getElementById('btn-diff-2').classList.toggle('active', level === 2);
+            document.getElementById('btn-diff-3').classList.toggle('active', level === 3);
+            randomizeControls();
+        }
+
+        document.getElementById('btn-diff-1').addEventListener('click', () => setDifficulty(1));
+        document.getElementById('btn-diff-2').addEventListener('click', () => setDifficulty(2));
+        document.getElementById('btn-diff-3').addEventListener('click', () => setDifficulty(3));
+
         document.getElementById('btn-1p').addEventListener('click', () => {
             is2Player = false;
             document.getElementById('btn-1p').classList.add('active');
             document.getElementById('btn-2p').classList.remove('active');
-            touchP2Container.classList.add('hidden');
-            feedbackP2.classList.add('hidden');
         });
         document.getElementById('btn-2p').addEventListener('click', () => {
             is2Player = true;
             document.getElementById('btn-2p').classList.add('active');
             document.getElementById('btn-1p').classList.remove('active');
-            touchP2Container.classList.remove('hidden');
-            feedbackP2.classList.remove('hidden');
-        });
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        class Particle {
-            constructor() { this.reset(); }
-            reset() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.isLarge = Math.random() > 0.8;
-                this.size = this.isLarge ? 15 : Math.random() * 4 + 2;
-                this.vx = (Math.random() - 0.5) * (this.isLarge ? 4 : 2);
-                this.vy = (Math.random() - 0.5) * (this.isLarge ? 4 : 2);
-                this.life = Math.random() * 100 + 50;
-                this.maxLife = this.life;
-                
-                const shapes = ['CIRCLE', 'SQUARE', 'TRIANGLE'];
-                this.shape = shapes[Math.floor(Math.random() * shapes.length)];
-                const colors = ['#f43f5e', '#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#eab308'];
-                this.color = colors[Math.floor(Math.random() * colors.length)];
-                
-                this.blinkSpeed = Math.random() > 0.7 ? Math.random() * 0.2 + 0.1 : 0;
-                this.blinkPhase = Math.random() * Math.PI * 2;
-            }
-            update() {
-                this.x += this.vx; this.y += this.vy; this.life--;
-                if (this.x < 0) this.x = canvas.width;
-                if (this.x > canvas.width) this.x = 0;
-                if (this.y < 0) this.y = canvas.height;
-                if (this.y > canvas.height) this.y = 0;
-                if (this.life <= 0) this.reset();
-            }
-            draw(ctx) {
-                let alpha = (this.life / this.maxLife) * 0.6;
-                if (this.blinkSpeed > 0) alpha *= (Math.sin(this.blinkPhase += this.blinkSpeed) * 0.5 + 0.5);
-                ctx.globalAlpha = alpha;
-                ctx.fillStyle = this.color;
-                
-                if (this.shape === 'CIRCLE') {
-                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
-                } else if (this.shape === 'SQUARE') {
-                    ctx.fillRect(this.x - this.size, this.y - this.size, this.size * 2, this.size * 2);
-                } else if (this.shape === 'TRIANGLE') {
-                    ctx.beginPath(); ctx.moveTo(this.x, this.y - this.size);
-                    ctx.lineTo(this.x + this.size, this.y + this.size);
-                    ctx.lineTo(this.x - this.size, this.y + this.size);
-                    ctx.closePath(); ctx.fill();
-                }
-                ctx.globalAlpha = 1.0;
-            }
-        }
-
-        class Wanderer {
-            constructor() { this.reset(); }
-            reset() {
-                this.x = canvas.width / 2; this.y = canvas.height / 2;
-                this.baseX = canvas.width / 2; this.baseY = canvas.height / 2;
-                this.size = 15;
-                this.angle = Math.random() * Math.PI * 2;
-                this.speed = 2 + Math.random() * 3;
-                this.active = false;
-                this.pulse = 0; this.tick = 0; this.radius = 0;
-                
-                const patterns = ['LINEAR', 'SPIRAL', 'SINE', 'ZIGZAG', 'ORBIT'];
-                this.pattern = patterns[Math.floor(Math.random() * patterns.length)];
-                this.angleSpeed = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 0.03 + 0.02);
-            }
-            spawn() {
-                this.reset();
-                this.active = true;
-            }
-            update() {
-                if (!this.active) return;
-                this.pulse += 0.1; this.tick++;
-
-                switch(this.pattern) {
-                    case 'LINEAR':
-                        this.angle += (Math.random() - 0.5) * 0.05;
-                        this.x += Math.cos(this.angle) * this.speed;
-                        this.y += Math.sin(this.angle) * this.speed;
-                        break;
-                    case 'SPIRAL':
-                        this.radius += this.speed * 0.4;
-                        this.angle += this.angleSpeed;
-                        this.x = this.baseX + Math.cos(this.angle) * this.radius;
-                        this.y = this.baseY + Math.sin(this.angle) * this.radius;
-                        break;
-                    case 'SINE':
-                        let moveX = Math.cos(this.angle) * this.speed * this.tick;
-                        let moveY = Math.sin(this.angle) * this.speed * this.tick;
-                        let perpAngle = this.angle + Math.PI / 2; 
-                        let osc = Math.sin(this.tick * 0.05) * 80;
-                        this.x = this.baseX + moveX + Math.cos(perpAngle) * osc;
-                        this.y = this.baseY + moveY + Math.sin(perpAngle) * osc;
-                        break;
-                    case 'ZIGZAG':
-                        if (this.tick % 45 === 0) this.angle += (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 2.5);
-                        this.x += Math.cos(this.angle) * this.speed;
-                        this.y += Math.sin(this.angle) * this.speed;
-                        break;
-                    case 'ORBIT':
-                        this.angle += this.angleSpeed;
-                        this.radius = 150 + Math.sin(this.tick * 0.02) * 80;
-                        this.x = this.baseX + Math.cos(this.angle) * this.radius;
-                        this.y = this.baseY + Math.sin(this.angle) * this.radius;
-                        break;
-                }
-
-                if (this.x < -200 || this.x > canvas.width + 200 || this.y < -200 || this.y > canvas.height + 200) {
-                    this.reset(); this.active = true;
-                }
-            }
-            draw(ctx) {
-                if (!this.active) return;
-                const pulseSize = this.size + Math.sin(this.pulse) * 5;
-                ctx.shadowBlur = 20; ctx.shadowColor = '#ef4444';
-                ctx.fillStyle = '#ef4444';
-                ctx.beginPath(); ctx.arc(this.x, this.y, pulseSize, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath(); ctx.arc(this.x, this.y, pulseSize * 0.4, 0, Math.PI * 2); ctx.fill();
-                ctx.shadowBlur = 0;
-            }
-        }
-
-        for (let i = 0; i < 50; i++) particles.push(new Particle());
-        wanderer = new Wanderer();
-
-        function drawCenterFixation() {
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
-
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(cx, cy, 40, 0, Math.PI * 2); ctx.stroke();
-
-            if (gameState === STATE_STIMULUS) {
-                if (currentTargetType === STIMULUS_SQUARE) {
-                    ctx.fillStyle = '#3b82f6'; ctx.shadowBlur = 15; ctx.shadowColor = '#3b82f6';
-                    ctx.fillRect(cx - 15, cy - 15, 30, 30);
-                } else if (currentTargetType === STIMULUS_TRIANGLE) {
-                    ctx.fillStyle = '#eab308'; ctx.shadowBlur = 15; ctx.shadowColor = '#eab308';
-                    ctx.beginPath(); ctx.moveTo(cx, cy - 18); ctx.lineTo(cx + 18, cy + 15); ctx.lineTo(cx - 18, cy + 15);
-                    ctx.closePath(); ctx.fill();
-                } else if (currentTargetType === STIMULUS_NOGO) {
-                    // Impulskontrolle: Roter Kreis, Gelbes Quadrat oder Blaues Dreieck
-                    if (currentNoGoType === 0) { // Roter Kreis
-                        ctx.fillStyle = '#ef4444'; ctx.shadowBlur = 15; ctx.shadowColor = '#ef4444';
-                        ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI * 2); ctx.fill();
-                    } else if (currentNoGoType === 1) { // Gelbes Quadrat (Falsche Farbe, richtige Form)
-                        ctx.fillStyle = '#eab308'; ctx.shadowBlur = 15; ctx.shadowColor = '#eab308';
-                        ctx.fillRect(cx - 15, cy - 15, 30, 30);
-                    } else if (currentNoGoType === 2) { // Blaues Dreieck (Richtige Farbe, falsche Form)
-                        ctx.fillStyle = '#3b82f6'; ctx.shadowBlur = 15; ctx.shadowColor = '#3b82f6';
-                        ctx.beginPath(); ctx.moveTo(cx, cy - 18); ctx.lineTo(cx + 18, cy + 15); ctx.lineTo(cx - 18, cy + 15);
-                        ctx.closePath(); ctx.fill();
-                    }
-                }
-                ctx.shadowBlur = 0;
-            } else {
-                ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(cx - 10, cy); ctx.lineTo(cx + 10, cy);
-                ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 10);
-                ctx.stroke();
-            }
-        }
-
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            if (gameState !== STATE_MENU && gameState !== STATE_RESULTS) {
-                particles.forEach(p => { p.update(); p.draw(ctx); });
-                if (gameState === STATE_WAITING || gameState === STATE_STIMULUS) {
-                    wanderer.update(); wanderer.draw(ctx);
-                }
-                drawCenterFixation();
-            }
-            requestAnimationFrame(gameLoop);
-        }
-        requestAnimationFrame(gameLoop);
-
-        function showFeedback(player, text, color) {
-            const fbElem = player === 1 ? feedbackP1 : feedbackP2;
-            const msgElem = player === 1 ? msgP1 : msgP2;
-            
-            msgElem.textContent = text;
-            msgElem.style.color = color;
-            fbElem.style.opacity = '1';
-            
-            setTimeout(() => { fbElem.style.opacity = '0'; }, 800);
-        }
-
-        function nextTrial() {
-            if (currentTrial >= TOTAL_TRIALS) {
-                endGame(); return;
-            }
-
-            currentTrial++;
-            hudRound.textContent = `${currentTrial}/${TOTAL_TRIALS}`;
-            gameState = STATE_WAITING;
-            
-            p1Stats.responded = false; p2Stats.responded = false;
-            wanderer.spawn();
-
-            const delay = 1500 + Math.random() * 2500;
-            stimulusTimer = setTimeout(() => {
-                if (gameState === STATE_WAITING) showStimulus();
-            }, delay);
-        }
-
-        function showStimulus() {
-            gameState = STATE_STIMULUS;
-            timeStimulusShown = performance.now();
-            
-            // 20% Chance für einen No-Go Trial
-            const rand = Math.random();
-            if (rand < 0.20) {
-                currentTargetType = STIMULUS_NOGO;
-                currentNoGoType = Math.floor(Math.random() * 3);
-            } else if (rand < 0.60) {
-                currentTargetType = STIMULUS_SQUARE;
-            } else {
-                currentTargetType = STIMULUS_TRIANGLE;
-            }
-            
-            // Timeout Dauer: Kürzere Wartezeit bei No-Go, um Flow zu erhalten.
-            const timeoutDuration = (currentTargetType === STIMULUS_NOGO) ? 1800 : 2500;
-            
-            stimulusTimer = setTimeout(() => {
-                if (gameState === STATE_STIMULUS) {
-                    if (currentTargetType === STIMULUS_NOGO) {
-                        // Niemand hat gedrückt? Perfekt! (Erfolgreiche Inhibition)
-                        if (!p1Stats.responded) showFeedback(1, "Gut inhibiert!", "#4ade80");
-                        if (is2Player && !p2Stats.responded) showFeedback(2, "Gut inhibiert!", "#4ade80");
-                    } else {
-                        // Target war da, aber niemand hat gedrückt (Zu langsam)
-                        if (!p1Stats.responded) { p1Stats.errors++; p1Stats.responded = true; showFeedback(1, "Verfehlt!", "#ef4444"); }
-                        if (is2Player && !p2Stats.responded) { p2Stats.errors++; p2Stats.responded = true; showFeedback(2, "Verfehlt!", "#ef4444"); }
-                    }
-                    checkTrialEnd();
-                }
-            }, timeoutDuration);
-        }
-
-        function handleInput(player, inputType) {
-            if (gameState === STATE_WAITING) {
-                const stats = player === 1 ? p1Stats : p2Stats;
-                if (!stats.responded) {
-                    stats.falseAlarms++; stats.responded = true;
-                    showFeedback(player, "Zu früh!", "#ef4444");
-                }
-                if (p1Stats.responded && (!is2Player || p2Stats.responded)) {
-                    clearTimeout(stimulusTimer); checkTrialEnd();
-                }
-                return;
-            }
-
-            if (gameState === STATE_STIMULUS) {
-                const stats = player === 1 ? p1Stats : p2Stats;
-                const reactionTime = performance.now() - timeStimulusShown;
-                
-                if (!stats.responded) {
-                    stats.responded = true;
-                    
-                    if (currentTargetType === STIMULUS_NOGO) {
-                        // Fehlschlag der Inhibitionskontrolle!
-                        stats.falseAlarms++;
-                        showFeedback(player, "Falscher Alarm!", "#ef4444");
-                    } else {
-                        // Reguläres Target
-                        if (inputType === currentTargetType) {
-                            stats.times.push(reactionTime);
-                            if (reactionTime < stats.best) stats.best = reactionTime;
-                            showFeedback(player, `${Math.round(reactionTime)} ms`, "#4ade80");
-                        } else {
-                            stats.errors++;
-                            stats.times.push(reactionTime); // Zählt trotzdem zur Zeit
-                            showFeedback(player, "Falsche Form!", "#f97316");
-                        }
-                    }
-                }
-
-                // End trial when everyone needed has responded, EXCEPT in No-Go where we want to wait to see if P2 fails too.
-                if (currentTargetType !== STIMULUS_NOGO || (p1Stats.responded && (!is2Player || p2Stats.responded))) {
-                    if (p1Stats.responded && (!is2Player || p2Stats.responded)) {
-                        clearTimeout(stimulusTimer); checkTrialEnd();
-                    }
-                }
-            }
-        }
-        
-        function checkTrialEnd() {
-            gameState = STATE_FEEDBACK;
-            wanderer.active = false;
-            setTimeout(nextTrial, 1000);
-        }
-
-        function startGame() {
-            uiMenu.classList.add('hidden');
-            uiResults.classList.add('hidden');
-            uiHud.classList.remove('hidden');
-            touchControls.classList.remove('hidden');
-            
-            currentTrial = 0;
-            p1Stats = { times: [], errors: 0, falseAlarms: 0, best: 9999, responded: false };
-            p2Stats = { times: [], errors: 0, falseAlarms: 0, best: 9999, responded: false };
-            
-            nextTrial();
-        }
-
-        function createResultCard(title, stats, colorClass) {
-            const avg = stats.times.length > 0 ? stats.times.reduce((a, b) => a + b) / stats.times.length : 0;
-            const avgStr = avg > 0 ? `${Math.round(avg)} ms` : '-';
-            const bestStr = stats.best !== 9999 ? `${Math.round(stats.best)} ms` : '-';
-            
-            return `
-                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 flex-1 min-w-[250px]">
-                    <h3 class="text-xl font-bold mb-4 text-white">${title}</h3>
-                    <div class="text-sm text-slate-400 uppercase tracking-widest mb-1">Reaktionszeit (Ø)</div>
-                    <div class="text-4xl font-extrabold ${colorClass} mb-4">${avgStr}</div>
-                    
-                    <div class="grid grid-cols-3 gap-2 text-sm">
-                        <div class="bg-slate-900 p-2 rounded text-center">
-                            <span class="text-slate-400 block text-xs">Form-Fehler</span>
-                            <span class="text-orange-400 font-bold">${stats.errors}</span>
-                        </div>
-                        <div class="bg-slate-900 p-2 rounded text-center" title="Impulskontrolle versagt / Zu früh gedrückt">
-                            <span class="text-slate-400 block text-xs">Impuls-Fehler</span>
-                            <span class="text-red-500 font-bold">${stats.falseAlarms}</span>
-                        </div>
-                        <div class="bg-slate-900 p-2 rounded text-center">
-                            <span class="text-slate-400 block text-xs">Bestzeit</span>
-                            <span class="text-green-400 font-bold">${bestStr}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function endGame() {
-            gameState = STATE_RESULTS;
-            uiHud.classList.add('hidden');
-            uiResults.classList.remove('hidden');
-            touchControls.classList.add('hidden');
-
-            const p1Avg = p1Stats.times.length > 0 ? p1Stats.times.reduce((a, b) => a + b) / p1Stats.times.length : 0;
-            const p2Avg = p2Stats.times.length > 0 ? p2Stats.times.reduce((a, b) => a + b) / p2Stats.times.length : 0;
-
-            const resultsContainer = document.getElementById('results-container');
-            resultsContainer.innerHTML = createResultCard("Spieler 1", p1Stats, "text-blue-400");
-            
-            if (is2Player) {
-                resultsContainer.innerHTML += createResultCard("Spieler 2", p2Stats, "text-emerald-400");
-            }
-
-            // Evaluation text logic
-            const evalEl = document.getElementById('result-evaluation');
-            const p1TotalErr = p1Stats.errors + p1Stats.falseAlarms;
-            const p2TotalErr = p2Stats.errors + p2Stats.falseAlarms;
-
-            if (is2Player) {
-                if (p1Avg === 0 && p2Avg === 0) evalEl.textContent = "Test ungültig. Zu wenige Reaktionen.";
-                else if (p1TotalErr < p2TotalErr) evalEl.textContent = "Spieler 1 gewinnt durch bessere Fehler-/Impulskontrolle!";
-                else if (p2TotalErr < p1TotalErr) evalEl.textContent = "Spieler 2 gewinnt durch bessere Fehler-/Impulskontrolle!";
-                else evalEl.textContent = (p1Avg < p2Avg) ? "Gleichstand bei Fehlern: Spieler 1 gewinnt durch schnellere Reflexe!" : "Gleichstand bei Fehlern: Spieler 2 gewinnt durch schnellere Reflexe!";
-            } else {
-                if (p1Avg === 0) evalEl.textContent = "Test ungültig.";
-                else if (p1Stats.falseAlarms > 2) evalEl.textContent = "Ihre Reaktionszeit ist gut, aber Sie neigen zu impulsiven Handlungen (Falscher Alarm bei No-Go-Reizen). Trainieren Sie, den Reiz erst kognitiv zu verarbeiten, bevor Sie drücken.";
-                else if (p1Avg < 380 && p1TotalErr === 0) evalEl.textContent = "Exzellente kognitive Leistung! Perfekte Inhibitionskontrolle und starker Fokus.";
-                else if (p1Avg < 480) evalEl.textContent = "Gute, durchschnittliche Leistung. Die Filterung der Störreize funktioniert ordentlich.";
-                else evalEl.textContent = "Erhöhte Reaktionszeit. Die Störreize haben Sie erfolgreich abgelenkt (Sakkaden-Auslösung). Versuchen Sie, den Blick starrer im Zentrum zu verankern.";
-            }
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (gameState === STATE_MENU || gameState === STATE_RESULTS) return;
-            if (e.key.toLowerCase() === p1SquareKey) handleInput(1, STIMULUS_SQUARE);
-            if (e.key.toLowerCase() === p1TriangleKey) handleInput(1, STIMULUS_TRIANGLE);
-            
-            if (e.key === p2SquareKey) handleInput(is2Player ? 2 : 1, STIMULUS_SQUARE);
-            if (e.key === p2TriangleKey) handleInput(is2Player ? 2 : 1, STIMULUS_TRIANGLE);
         });
 
         document.getElementById('start-btn').addEventListener('click', startGame);
+
         document.getElementById('restart-btn').addEventListener('click', () => {
             gameState = STATE_MENU;
             uiResults.classList.add('hidden');
             uiMenu.classList.remove('hidden');
             randomizeControls();
         });
-        
-        function randomizeControls() {
-            if (Math.random() > 0.5) { p1SquareKey = 'a'; p1TriangleKey = 'd'; } 
-            else { p1SquareKey = 'd'; p1TriangleKey = 'a'; }
 
-            if (Math.random() > 0.5) { p2SquareKey = 'ArrowLeft'; p2TriangleKey = 'ArrowRight'; } 
-            else { p2SquareKey = 'ArrowRight'; p2TriangleKey = 'ArrowLeft'; }
+        function randomizeControls() {
+            let availableColors = [...COLOR_POOL].sort(() => 0.5 - Math.random());
+            colorSq = availableColors[0];
+            colorTr = availableColors[1];
+            colorCi = availableColors[2];
+
+            if (currentDifficulty === 3) {
+                let p1Keys = ['a', 's', 'd'].sort(() => 0.5 - Math.random());
+                p1SquareKey = p1Keys[0]; p1TriangleKey = p1Keys[1]; p1CircleKey = p1Keys[2];
+
+                let p2Keys = ['ArrowLeft', 'ArrowDown', 'ArrowRight'].sort(() => 0.5 - Math.random());
+                p2SquareKey = p2Keys[0]; p2TriangleKey = p2Keys[1]; p2CircleKey = p2Keys[2];
+            } else if (currentDifficulty === 2) {
+                let p1Keys = ['a', 'd'].sort(() => 0.5 - Math.random());
+                p1SquareKey = p1Keys[0]; p1TriangleKey = p1Keys[1]; 
+
+                let p2Keys = ['ArrowLeft', 'ArrowRight'].sort(() => 0.5 - Math.random());
+                p2SquareKey = p2Keys[0]; p2TriangleKey = p2Keys[1]; 
+            } else {
+                // Bei Lvl 1: Exakt eine spezifische Taste aus den 3 möglichen wählen
+                let p1Keys = ['a', 's', 'd'].sort(() => 0.5 - Math.random());
+                p1SquareKey = p1Keys[0];
+                
+                let p2Keys = ['ArrowLeft', 'ArrowDown', 'ArrowRight'].sort(() => 0.5 - Math.random());
+                p2SquareKey = p2Keys[0];
+            }
 
             updateUIForControls();
         }
 
         function updateUIForControls() {
-            const p1SqTouch = p1SquareKey === 'a' ? 'Linke Hälfte Oben' : 'Linke Hälfte Unten';
-            const p2SqTouch = p2SquareKey === 'ArrowLeft' ? 'Rechte Hälfte Oben' : 'Rechte Hälfte Unten';
-            const p1TrTouch = p1TriangleKey === 'a' ? 'Linke Hälfte Oben' : 'Linke Hälfte Unten';
-            const p2TrTouch = p2TriangleKey === 'ArrowLeft' ? 'Rechte Hälfte Oben' : 'Rechte Hälfte Unten';
+            const getZoneName = (k, pName) => {
+                if (currentDifficulty === 1) return `Gesamte Bildschirmhälfte (${pName})`;
+                if (currentDifficulty === 2) {
+                    if (k === 'a' || k === 'ArrowLeft') return `Obere Hälfte (${pName})`;
+                    if (k === 'd' || k === 'ArrowRight') return `Untere Hälfte (${pName})`;
+                }
+                if (k === 'a' || k === 'ArrowLeft') return `Oberes Drittel (${pName})`;
+                if (k === 's' || k === 'ArrowDown') return `Mittleres Drittel (${pName})`;
+                if (k === 'd' || k === 'ArrowRight') return `Unteres Drittel (${pName})`;
+                return '';
+            };
+            const getKeyName = (k) => {
+                if (k === 'ArrowLeft') return 'Pfeil LINKS';
+                if (k === 'ArrowDown') return 'Pfeil UNTEN';
+                if (k === 'ArrowRight') return 'Pfeil RECHTS';
+                return (k || '').toUpperCase();
+            };
+
+            // Touch-Zonen anpassen (Mitte bei Lvl 2 verstecken)
+            document.getElementById('touch-p1-middle').classList.toggle('hidden', currentDifficulty === 2);
+            document.getElementById('touch-p2-middle').classList.toggle('hidden', currentDifficulty === 2);
+
+            // Textfarben und Namen
+            document.getElementById('title-sq').className = colorSq.textClass;
+            document.getElementById('title-sq').textContent = `${colorSq.name} Quadrat`;
             
-            document.getElementById('rule-blue').innerHTML = 
-                `S1: Taste '${p1SquareKey.toUpperCase()}' / Touch: ${p1SqTouch} <br> S2: Pfeil '${p2SquareKey === 'ArrowLeft' ? 'LINKS' : 'RECHTS'}' / Touch: ${p2SqTouch}`;
-            document.getElementById('rule-yellow').innerHTML = 
-                `S1: Taste '${p1TriangleKey.toUpperCase()}' / Touch: ${p1TrTouch} <br> S2: Pfeil '${p2TriangleKey === 'ArrowLeft' ? 'LINKS' : 'RECHTS'}' / Touch: ${p2TrTouch}`;
+            document.getElementById('title-tr').className = colorTr.textClass;
+            document.getElementById('title-tr').textContent = `${colorTr.name} Dreieck`;
+
+            document.getElementById('title-ci').className = colorCi.textClass;
+            document.getElementById('title-ci').textContent = `${colorCi.name} Kreis`;
             
-            document.getElementById('touch-p1-top').innerHTML = '';
-            document.getElementById('touch-p1-bottom').innerHTML = '';
-            document.getElementById('touch-p2-top').innerHTML = '';
-            document.getElementById('touch-p2-bottom').innerHTML = '';
+            const liTr = document.getElementById('li-rule-tr');
+            const liCi = document.getElementById('li-rule-ci');
+            
+            const txtP1Sq = `S1 (Linker Spieler): Taste <b>${getKeyName(p1SquareKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p1SquareKey, 'Links')}</span>`;
+            const txtP2Sq = `S2 (Rechter Spieler): Taste <b>${getKeyName(p2SquareKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p2SquareKey, 'Rechts')}</span>`;
+            
+            const txtP1Tr = `S1 (Linker Spieler): Taste <b>${getKeyName(p1TriangleKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p1TriangleKey, 'Links')}</span>`;
+            const txtP2Tr = `S2 (Rechter Spieler): Taste <b>${getKeyName(p2TriangleKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p2TriangleKey, 'Rechts')}</span>`;
+
+            const txtP1Ci = `S1 (Linker Spieler): Taste <b>${getKeyName(p1CircleKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p1CircleKey, 'Links')}</span>`;
+            const txtP2Ci = `S2 (Rechter Spieler): Taste <b>${getKeyName(p2CircleKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p2CircleKey, 'Rechts')}</span>`;
+
+            if (currentDifficulty === 1) {
+                liTr.classList.add('hidden');
+                liCi.classList.add('hidden');
+                document.getElementById('rule-sq').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorSq.textClass}">${txtP1Sq}</div><div class="${colorSq.textClass}">${txtP2Sq}</div></div>`;
+            } else if (currentDifficulty === 2) {
+                liTr.classList.remove('hidden');
+                liCi.classList.add('hidden');
+                document.getElementById('rule-sq').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorSq.textClass}">${txtP1Sq}</div><div class="${colorSq.textClass}">${txtP2Sq}</div></div>`;
+                document.getElementById('rule-tr').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorTr.textClass}">${txtP1Tr}</div><div class="${colorTr.textClass}">${txtP2Tr}</div></div>`;
+            } else {
+                liTr.classList.remove('hidden');
+                liCi.classList.remove('hidden');
+                document.getElementById('rule-sq').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorSq.textClass}">${txtP1Sq}</div><div class="${colorSq.textClass}">${txtP2Sq}</div></div>`;
+                document.getElementById('rule-tr').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorTr.textClass}">${txtP1Tr}</div><div class="${colorTr.textClass}">${txtP2Tr}</div></div>`;
+                document.getElementById('rule-ci').innerHTML = `<div class="grid grid-cols-2 gap-2"><div class="${colorCi.textClass}">${txtP1Ci}</div><div class="${colorCi.textClass}">${txtP2Ci}</div></div>`;
+            }
         }
 
-        randomizeControls();
+        // --- Spiel Ablauf ---
 
-        function bindTouch(id, player, isTop) {
+        function startGame() {
+            uiMenu.classList.add('hidden');
+            touchLayer.classList.remove('hidden'); // Touchzonen aktivieren
+            statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0 };
+            statsP2 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0 };
+            currentTrial = 0;
+            particles = [];
+            for (let i=0; i<25; i++) particles.push(createParticle());
+            wanderer = new Wanderer();
+            scheduleNextTrial();
+        }
+
+        function scheduleNextTrial() {
+            gameState = STATE_INTERTRIAL;
+            p1Responded = false;
+            p2Responded = false;
+            let delay = 1500 + Math.random() * 2000;
+            timeoutId = setTimeout(showStimulus, delay);
+        }
+
+        function showStimulus() {
+            gameState = STATE_STIMULUS;
+            timeStimulusShown = performance.now();
+            
+            // 20% Chance für No-Go
+            if (Math.random() < 0.20) {
+                currentTargetType = STIMULUS_NOGO;
+                currentNoGoType = Math.floor(Math.random() * (currentDifficulty === 1 ? 2 : 4));
+            } else {
+                if (currentDifficulty === 1) {
+                    currentTargetType = STIMULUS_SQUARE;
+                } else if (currentDifficulty === 2) {
+                    currentTargetType = (Math.random() < 0.60) ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
+                } else {
+                    let r = Math.random();
+                    if (r < 0.4) currentTargetType = STIMULUS_SQUARE;
+                    else if (r < 0.7) currentTargetType = STIMULUS_TRIANGLE;
+                    else currentTargetType = STIMULUS_CIRCLE;
+                }
+            }
+            
+            let timeLimit = currentTargetType === STIMULUS_NOGO ? 1500 : 2500;
+            timeoutId = setTimeout(checkRoundEnd, timeLimit);
+        }
+
+        function checkRoundEnd() {
+            if (gameState !== STATE_STIMULUS) return;
+            
+            // Wenn beide gespielt haben oder die Zeit abgelaufen ist
+            let p1Done = p1Responded || !is2Player;
+            let p2Done = p2Responded;
+            
+            // Bei einem No-Go Trial ist "Nicht-Drücken" das korrekte Verhalten
+            if (currentTargetType === STIMULUS_NOGO) {
+                if (!p1Responded) statsP1.correct++;
+                if (is2Player && !p2Responded) statsP2.correct++;
+            }
+            
+            if ((p1Done && p2Done) || timeoutId) {
+                clearTimeout(timeoutId);
+                currentTrial++;
+                if (currentTrial >= MAX_TRIALS) {
+                    endGame();
+                } else {
+                    scheduleNextTrial();
+                }
+            }
+        }
+
+        function showFeedback(player, text, color = '#f87171') {
+            const el = document.getElementById(player === 1 ? 'feedback-p1' : 'feedback-p2');
+            el.textContent = text;
+            el.style.color = color;
+            el.style.opacity = 1;
+            setTimeout(() => { el.style.opacity = 0; }, 800);
+        }
+
+        function handleInput(player, type) {
+            if (gameState !== STATE_STIMULUS) {
+                if (gameState === STATE_INTERTRIAL) {
+                    if (player === 1 && !p1Responded) { statsP1.impulseErrors++; p1Responded = true; }
+                    if (player === 2 && !p2Responded && is2Player) { statsP2.impulseErrors++; p2Responded = true; }
+                }
+                return;
+            }
+            
+            if (currentTargetType === STIMULUS_NOGO) {
+                if (player === 1 && !p1Responded) {
+                    statsP1.impulseErrors++; p1Responded = true; showFeedback(1, "Falscher Alarm!");
+                } else if (player === 2 && !p2Responded && is2Player) {
+                    statsP2.impulseErrors++; p2Responded = true; showFeedback(2, "Falscher Alarm!");
+                }
+            } else {
+                if (player === 1 && !p1Responded) {
+                    let rt = performance.now() - timeStimulusShown;
+                    statsP1.rt.push(rt); p1Responded = true;
+                    if (type === currentTargetType) { statsP1.correct++; showFeedback(1, rt.toFixed(0) + " ms", '#4ade80'); } 
+                    else { statsP1.formErrors++; showFeedback(1, "Falsche Taste!"); }
+                } else if (player === 2 && !p2Responded && is2Player) {
+                    let rt = performance.now() - timeStimulusShown;
+                    statsP2.rt.push(rt); p2Responded = true;
+                    if (type === currentTargetType) { statsP2.correct++; showFeedback(2, rt.toFixed(0) + " ms", '#4ade80'); } 
+                    else { statsP2.formErrors++; showFeedback(2, "Falsche Taste!"); }
+                }
+            }
+            
+            let p1Done = p1Responded || !is2Player;
+            if (p1Done && (p2Responded || !is2Player)) checkRoundEnd();
+        }
+
+        // Tasten-Input
+        document.addEventListener('keydown', (e) => {
+            if (gameState === STATE_MENU || gameState === STATE_RESULTS) return;
+            const kLow = e.key.toLowerCase();
+            const kRaw = e.key; 
+
+            // Spieler 1 Layout
+            const p1Set = ['a', 's', 'd'];
+            if (p1Set.includes(kLow)) {
+                if (kLow === p1SquareKey) handleInput(1, STIMULUS_SQUARE);
+                else if (kLow === p1TriangleKey && currentDifficulty >= 2) handleInput(1, STIMULUS_TRIANGLE);
+                else if (kLow === p1CircleKey && currentDifficulty === 3) handleInput(1, STIMULUS_CIRCLE);
+                else handleInput(1, 999); // 999 = Ungültige Form -> Zählt als Fehler
+            }
+            
+            // Spieler 2 Layout
+            const p2Set = ['ArrowLeft', 'ArrowDown', 'ArrowRight'];
+            if (p2Set.includes(kRaw)) {
+                const playerIdx = is2Player ? 2 : 1;
+                if (kRaw === p2SquareKey) handleInput(playerIdx, STIMULUS_SQUARE);
+                else if (kRaw === p2TriangleKey && currentDifficulty >= 2) handleInput(playerIdx, STIMULUS_TRIANGLE);
+                else if (kRaw === p2CircleKey && currentDifficulty === 3) handleInput(playerIdx, STIMULUS_CIRCLE);
+                else handleInput(playerIdx, 999); // 999 = Ungültige Form -> Zählt als Fehler
+            }
+        });
+
+        // Touch-Input (Zonen direkt mit Form verknüpfen)
+        function bindTouch(id, player, zonePos) {
             const el = document.getElementById(id);
             if (!el) return;
             
             const handleTouch = (e) => {
                 if (e.cancelable) e.preventDefault();
-                let type;
-                if (player === 1) {
-                    type = (p1SquareKey === (isTop ? 'a' : 'd')) ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
+                let type = null;
+                
+                if (currentDifficulty === 1) {
+                    type = STIMULUS_SQUARE; 
+                } else if (currentDifficulty === 2) {
+                    if (zonePos === 'top') type = STIMULUS_SQUARE;
+                    if (zonePos === 'bottom') type = STIMULUS_TRIANGLE;
                 } else {
-                    type = (p2SquareKey === (isTop ? 'ArrowLeft' : 'ArrowRight')) ? STIMULUS_SQUARE : STIMULUS_TRIANGLE;
+                    if (zonePos === 'top') type = STIMULUS_SQUARE;
+                    if (zonePos === 'middle') type = STIMULUS_TRIANGLE;
+                    if (zonePos === 'bottom') type = STIMULUS_CIRCLE;
                 }
+                
+                if (!type) return;
                 
                 el.classList.add('active-tap');
                 setTimeout(() => el.classList.remove('active-tap'), 150);
-                
                 handleInput(player, type);
             };
 
             el.addEventListener('touchstart', handleTouch, { passive: false });
-            el.addEventListener('mousedown', handleTouch);
+            el.addEventListener('mousedown', handleTouch); // Für Tests mit der Maus
         }
 
-        bindTouch('touch-p1-top', 1, true);
-        bindTouch('touch-p1-bottom', 1, false);
-        bindTouch('touch-p2-top', 2, true);
-        bindTouch('touch-p2-bottom', 2, false);
+        bindTouch('touch-p1-top', 1, 'top');
+        bindTouch('touch-p1-middle', 1, 'middle');
+        bindTouch('touch-p1-bottom', 1, 'bottom');
+        bindTouch('touch-p2-top', 2, 'top');
+        bindTouch('touch-p2-middle', 2, 'middle');
+        bindTouch('touch-p2-bottom', 2, 'bottom');
 
+        function endGame() {
+            gameState = STATE_RESULTS;
+            touchLayer.classList.add('hidden');
+            
+            const createStatsHTML = (name, stats) => {
+                let avgRt = stats.rt.length > 0 ? (stats.rt.reduce((a,b)=>a+b,0)/stats.rt.length).toFixed(0) : "Keine";
+                let accuracy = Math.round((stats.correct / MAX_TRIALS) * 100);
+                
+                let evalText = "";
+                if (stats.impulseErrors > 2) evalText = "<span class='text-red-400'>Impulsiv. Fokus verlagert sich zu schnell.</span>";
+                else if (avgRt < 450 && accuracy > 85) evalText = "<span class='text-green-400'>Exzellente Fixationskontrolle!</span>";
+                else evalText = "<span class='text-yellow-400'>Augen sind dem Wanderer gefolgt (Zeitverlust).</span>";
+
+                return `
+                    <div class="bg-slate-800 p-4 rounded-lg border ${accuracy > 80 ? 'border-green-500' : 'border-slate-600'}">
+                        <h3 class="font-bold text-xl mb-3 text-blue-300">${name}</h3>
+                        <p class="mb-1 text-slate-300">Richtig gelöst: <b class="text-white">${stats.correct} / ${MAX_TRIALS}</b></p>
+                        <p class="mb-1 text-slate-300">Reaktionszeit (Ø): <b class="text-white">${avgRt} ms</b></p>
+                        <hr class="border-slate-600 my-2">
+                        <p class="mb-1 text-slate-300 text-sm">Form-Fehler (Falsche Taste): <b class="text-red-300">${stats.formErrors}</b></p>
+                        <p class="mb-3 text-slate-300 text-sm">Impuls-Fehler (Zu früh / No-Go): <b class="text-red-300">${stats.impulseErrors}</b></p>
+                        <p class="text-sm italic">${evalText}</p>
+                    </div>
+                `;
+            };
+
+            let html = createStatsHTML("Linker Spieler (S1)", statsP1);
+            if (is2Player) html += createStatsHTML("Rechter Spieler (S2)", statsP2);
+            
+            statsContainer.innerHTML = html;
+            uiResults.classList.remove('hidden');
+        }
+
+        // --- Render Loop ---
+
+        function drawTargetShape(ctx, x, y, size, type, colorObj) {
+            ctx.fillStyle = colorObj.hex;
+            ctx.beginPath();
+            if (type === STIMULUS_SQUARE) {
+                ctx.rect(x - size/2, y - size/2, size, size);
+            } else if (type === STIMULUS_TRIANGLE) {
+                ctx.moveTo(x, y - size/2);
+                ctx.lineTo(x + size/2, y + size/2);
+                ctx.lineTo(x - size/2, y + size/2);
+            } else if (type === STIMULUS_CIRCLE) {
+                ctx.arc(x, y, size/2, 0, Math.PI * 2);
+            }
+            ctx.fill();
+        }
+
+        function gameLoop() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Hintergrund Partikel (Ablenkung)
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy; p.life--;
+                
+                // Neu generieren, wenn Lebensdauer abgelaufen oder aus dem Bild geflogen
+                if (p.life <= 0 || p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+                    Object.assign(p, createParticle());
+                }
+                
+                // Sanftes Ein- und Ausblenden (Fade in / Fade out) anhand der verbleibenden Lebensdauer
+                let opacity = Math.sin((p.life / p.maxLife) * Math.PI) * 0.65; 
+                ctx.globalAlpha = Math.max(0, opacity);
+                
+                // Form zeichnen
+                drawTargetShape(ctx, p.x, p.y, p.size, p.shape, {hex: p.color});
+            });
+            ctx.globalAlpha = 1.0;
+
+            if (gameState === STATE_STIMULUS || gameState === STATE_INTERTRIAL) {
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+
+                // Wanderer (rote Ablenkung mit weißem Punkt)
+                wanderer.update();
+                wanderer.draw(ctx);
+
+                // Zentrum (Fixationskreuz oder Target)
+                if (gameState === STATE_INTERTRIAL) {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 15, cy); ctx.lineTo(cx + 15, cy);
+                    ctx.moveTo(cx, cy - 15); ctx.lineTo(cx, cy + 15);
+                    ctx.stroke();
+                } else if (gameState === STATE_STIMULUS) {
+                    const size = 60;
+                    if (currentTargetType === STIMULUS_NOGO) {
+                        if (currentNoGoType === 0) drawTargetShape(ctx, cx, cy, size, STIMULUS_CIRCLE, {hex: '#ef4444'}); // Roter Kreis
+                        else if (currentNoGoType === 1) drawTargetShape(ctx, cx, cy, size, STIMULUS_SQUARE, colorTr); // Vertauschte Farbe
+                        else if (currentNoGoType === 2) drawTargetShape(ctx, cx, cy, size, STIMULUS_TRIANGLE, colorSq);
+                        else drawTargetShape(ctx, cx, cy, size, STIMULUS_CIRCLE, colorSq);
+                    } else if (currentTargetType === STIMULUS_SQUARE) {
+                        drawTargetShape(ctx, cx, cy, size, STIMULUS_SQUARE, colorSq);
+                    } else if (currentTargetType === STIMULUS_TRIANGLE) {
+                        drawTargetShape(ctx, cx, cy, size, STIMULUS_TRIANGLE, colorTr);
+                    } else if (currentTargetType === STIMULUS_CIRCLE) {
+                        drawTargetShape(ctx, cx, cy, size, STIMULUS_CIRCLE, colorCi);
+                    }
+                }
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Init
+        randomizeControls();
+        gameLoop();
     </script>
 </body>
 </html>
