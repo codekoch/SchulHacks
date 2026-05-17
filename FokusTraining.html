@@ -1,58 +1,209 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fokus-Wächter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #0f172a; touch-action: none; font-family: sans-serif; }
-        #game-canvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-        
-        .ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-        .ui-content { pointer-events: auto; background: rgba(30, 41, 59, 0.95); padding: 2rem; border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); max-width: 90vw; width: 620px; max-height: 95vh; overflow-y: auto; text-align: center; }
-        
-        .btn { background-color: #3b82f6; color: white; font-weight: bold; padding: 0.75rem 1.5rem; border-radius: 0.5rem; transition: background-color 0.2s; cursor: pointer; }
-        .btn:hover { background-color: #2563eb; }
-        .btn:active { transform: scale(0.95); }
-        .mode-btn { background-color: #475569; }
-        .mode-btn.active { background-color: #10b981; }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0f172a;
+            touch-action: none;
+            font-family: sans-serif;
+        }
+
+        #game-canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .ui-content {
+            pointer-events: auto;
+            background: rgba(30, 41, 59, 0.95);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            max-width: 90vw;
+            width: 620px;
+            max-height: 95vh;
+            overflow-y: auto;
+            text-align: center;
+        }
+
+        .btn {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #2563eb;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .mode-btn {
+            background-color: #475569;
+        }
+
+        .mode-btn.active {
+            background-color: #10b981;
+        }
 
         /* Touch Zones für iPads/Tablets */
-        #touch-layer { position: absolute; inset: 0; z-index: 10; display: flex; pointer-events: none; }
-        .touch-column { width: 50%; height: 100%; display: flex; flex-direction: column; pointer-events: auto; }
-        .touch-zone { flex: 1; border: 1px solid rgba(255,255,255,0.05); opacity: 0; transition: opacity 0.1s; cursor: pointer; }
-        .touch-zone.active-tap { background-color: rgba(255, 255, 255, 0.15); opacity: 1; }
+        #touch-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            pointer-events: none;
+        }
+
+        .touch-column {
+            width: 50%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+        }
+
+        .touch-zone {
+            flex: 1;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            opacity: 0;
+            transition: opacity 0.1s;
+            cursor: pointer;
+        }
+
+        .touch-zone.active-tap {
+            background-color: rgba(255, 255, 255, 0.15);
+            opacity: 1;
+        }
 
         /* Anpassungen für Smartphone Landscape und kleine Bildschirme */
         @media (max-height: 600px) {
-            .ui-content { padding: 1rem; width: 95vw; max-width: 800px; max-height: 98vh; }
-            h1 { font-size: 1.5rem !important; margin-bottom: 0.5rem !important; }
-            h2 { font-size: 1.5rem !important; margin-bottom: 0.5rem !important; }
-            .mb-6 { margin-bottom: 0.5rem !important; }
-            .mb-4 { margin-bottom: 0.5rem !important; }
-            .p-4 { padding: 0.5rem 1rem !important; }
-            .btn { padding: 0.5rem 1rem; font-size: 0.85rem; }
-            .text-sm { font-size: 0.8rem !important; line-height: 1.2 !important; }
-            .text-xs { font-size: 0.75rem !important; }
-            
+            .ui-content {
+                padding: 1rem;
+                width: 95vw;
+                max-width: 800px;
+                max-height: 98vh;
+            }
+
+            h1 {
+                font-size: 1.5rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            h2 {
+                font-size: 1.5rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            .mb-6 {
+                margin-bottom: 0.5rem !important;
+            }
+
+            .mb-4 {
+                margin-bottom: 0.5rem !important;
+            }
+
+            .p-4 {
+                padding: 0.5rem 1rem !important;
+            }
+
+            .btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .text-sm {
+                font-size: 0.8rem !important;
+                line-height: 1.2 !important;
+            }
+
+            .text-xs {
+                font-size: 0.75rem !important;
+            }
+
             /* Kompaktere Anleitungstexte */
-            h1 + div { padding: 0.5rem 1rem !important; margin-bottom: 0.5rem !important; }
-            h1 + div br + br { display: none; }
-            h1 + div strong { display: inline-block; margin-right: 0.5rem; margin-bottom: 0; }
-            
+            h1+div {
+                padding: 0.5rem 1rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            h1+div br+br {
+                display: none;
+            }
+
+            h1+div strong {
+                display: inline-block;
+                margin-right: 0.5rem;
+                margin-bottom: 0;
+            }
+
             /* Kompaktere Regeln */
-            .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.25rem !important; }
-            #rule-sq, #rule-tr, #rule-ci { padding: 0.25rem 0.5rem !important; }
-            
+            .space-y-3> :not([hidden])~ :not([hidden]) {
+                margin-top: 0.25rem !important;
+            }
+
+            #rule-sq,
+            #rule-tr,
+            #rule-ci {
+                padding: 0.25rem 0.5rem !important;
+            }
+
             /* Kompaktere Stats */
-            #stats-container { gap: 0.5rem !important; margin-bottom: 0.5rem !important; margin-top: 0.25rem !important; }
-            #stats-container h3 { font-size: 1.1rem !important; margin-bottom: 0.25rem !important; }
-            #stats-container p { margin-bottom: 0.1rem !important; font-size: 0.75rem !important; }
-            #stats-container > div { padding: 0.5rem !important; }
+            #stats-container {
+                gap: 0.5rem !important;
+                margin-bottom: 0.5rem !important;
+                margin-top: 0.25rem !important;
+            }
+
+            #stats-container h3 {
+                font-size: 1.1rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+
+            #stats-container p {
+                margin-bottom: 0.1rem !important;
+                font-size: 0.75rem !important;
+            }
+
+            #stats-container>div {
+                padding: 0.5rem !important;
+            }
         }
     </style>
 </head>
+
 <body class="text-slate-100">
 
     <canvas id="game-canvas"></canvas>
@@ -76,12 +227,16 @@
     <div id="ui-menu" class="ui-layer">
         <div class="ui-content border border-slate-700">
             <h1 class="text-3xl font-bold mb-4 text-white">Fokus-Wächter</h1>
-            
-            <div class="bg-blue-900/40 border border-blue-500 text-blue-200 p-4 rounded-lg mb-6 text-sm shadow-lg text-left">
+
+            <div
+                class="bg-blue-900/40 border border-blue-500 text-blue-200 p-4 rounded-lg mb-6 text-sm shadow-lg text-left">
                 <strong class="text-white block mb-1 text-base">🎯 WICHTIGE AUFGABE:</strong>
-                Fixieren Sie durchgehend das Zentrum! Drücken Sie <b>NUR</b> für die exakt unten genannten Kombinationen aus Form und Farbe.<br><br>
-                Reagieren Sie bei allen anderen auftauchenden Symbolen, falschen Farben oder sonstigen Ablenkungen (wie dem roten Punkt) absolut <b>NICHT</b>!
-                <br><br><span class="text-yellow-300"><b>Achtung:</b> Bitte vor jedem Start gut durchlesen, da die Farben, Formen und Tasten bei jedem Spiel rotieren.</span>
+                Fixieren Sie durchgehend das Zentrum! Drücken Sie <b>NUR</b> für die exakt unten genannten Kombinationen
+                aus Form und Farbe.<br><br>
+                Reagieren Sie bei allen anderen auftauchenden Symbolen, falschen Farben oder sonstigen Ablenkungen (wie
+                dem roten Punkt) absolut <b>NICHT</b>!
+                <br><br><span class="text-yellow-300"><b>Achtung:</b> Bitte vor jedem Start gut durchlesen, da die
+                    Farben, Formen und Tasten bei jedem Spiel rotieren.</span>
             </div>
 
             <div class="flex gap-2 justify-center mb-4 flex-wrap">
@@ -95,25 +250,44 @@
                 <button id="btn-1p" class="btn mode-btn active">1 Spieler</button>
                 <button id="btn-2p" class="btn mode-btn">2 Spieler</button>
             </div>
+            
+            <div class="flex flex-col items-center justify-center mb-6">
+                <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white bg-slate-800 px-4 py-2 rounded border border-slate-600">
+                    <input type="checkbox" id="cb-gorilla" class="w-5 h-5 accent-blue-500">
+                    Opaque Gorilla Option
+                </label>
+                <div id="gorilla-hint" class="hidden text-xs text-yellow-300 mt-2 bg-slate-800/80 p-3 rounded max-w-md border border-yellow-500/30 text-left">
+                    <b>Sonderform erkennen:</b> Falls eine Form erscheint, die kein Dreieck, Quadrat oder Kreis ist, bestätige dies sofort:<br>
+                    <span class="text-white mt-1 block"><b>S1 (Links):</b> 2 Tasten aus [A, S, D] oder 2 linke Touchzonen gleichzeitig.</span>
+                    <span class="text-white block"><b>S2 (Rechts):</b> 2 Pfeiltasten [←, ↓, →] oder 2 rechte Touchzonen gleichzeitig.</span>
+                </div>
+            </div>
 
             <div class="text-left bg-slate-800/80 p-4 rounded-lg mb-6 text-sm text-slate-200 border border-slate-600">
                 <ul class="space-y-3">
                     <li id="li-rule-sq">
                         <b id="title-sq">...</b><br>
-                        <div id="rule-sq" class="bg-black/40 px-2 py-1.5 rounded mt-1 inline-block border border-slate-700 w-full">...</div>
+                        <div id="rule-sq"
+                            class="bg-black/40 px-2 py-1.5 rounded mt-1 inline-block border border-slate-700 w-full">...
+                        </div>
                     </li>
                     <li id="li-rule-tr">
                         <b id="title-tr">...</b><br>
-                        <div id="rule-tr" class="bg-black/40 px-2 py-1.5 rounded mt-1 inline-block border border-slate-700 w-full">...</div>
+                        <div id="rule-tr"
+                            class="bg-black/40 px-2 py-1.5 rounded mt-1 inline-block border border-slate-700 w-full">...
+                        </div>
                     </li>
                     <li id="li-rule-ci">
                         <b id="title-ci">...</b><br>
-                        <div id="rule-ci" class="bg-black/40 px-2 py-1.5 rounded mt-1 inline-block border border-slate-700 w-full">...</div>
+                        <div id="rule-ci"
+                            class="bg-black/40 px-2 py-1.5 rounded mt-1 inline-block border border-slate-700 w-full">...
+                        </div>
                     </li>
                 </ul>
             </div>
 
-            <button id="start-btn" class="btn w-full text-lg shadow-lg shadow-blue-500/20">Training Starten (15 Runden)</button>
+            <button id="start-btn" class="btn w-full text-lg shadow-lg shadow-blue-500/20">Training Starten (15
+                Runden)</button>
         </div>
     </div>
 
@@ -122,7 +296,7 @@
             <h2 class="text-3xl font-bold mb-2 text-white">Auswertung</h2>
             <!-- Siegeranzeige -->
             <div id="winner-announcement"></div>
-            
+
             <div id="stats-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 mt-4">
                 <!-- Stats werden dynamisch eingefügt -->
             </div>
@@ -132,13 +306,17 @@
     </div>
 
     <!-- Feedback Layer -->
-    <div id="feedback-p1" class="absolute transform -translate-x-1/2 -translate-y-1/2 text-3xl font-bold opacity-0 pointer-events-none z-30 drop-shadow-md" style="text-shadow: 0px 4px 10px rgba(0,0,0,0.8);"></div>
-    <div id="feedback-p2" class="absolute transform -translate-x-1/2 -translate-y-1/2 text-3xl font-bold opacity-0 pointer-events-none z-30 drop-shadow-md" style="text-shadow: 0px 4px 10px rgba(0,0,0,0.8);"></div>
+    <div id="feedback-p1"
+        class="absolute transform -translate-x-1/2 -translate-y-1/2 text-3xl font-bold opacity-0 pointer-events-none z-30 drop-shadow-md"
+        style="text-shadow: 0px 4px 10px rgba(0,0,0,0.8);"></div>
+    <div id="feedback-p2"
+        class="absolute transform -translate-x-1/2 -translate-y-1/2 text-3xl font-bold opacity-0 pointer-events-none z-30 drop-shadow-md"
+        style="text-shadow: 0px 4px 10px rgba(0,0,0,0.8);"></div>
 
     <script>
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
-        
+
         const uiMenu = document.getElementById('ui-menu');
         const uiResults = document.getElementById('ui-results');
         const touchLayer = document.getElementById('touch-layer');
@@ -182,7 +360,7 @@
         let is2Player = false;
         let currentDifficulty = 2; // Geändert auf 2 für den Startwert
         let currentTrial = 0;
-        
+
         let statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
         let statsP2 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
 
@@ -194,13 +372,138 @@
         let p1Responded = false;
         let p2Responded = false;
         // Tracking für "Zu früh gedrückt"
-        let p1EarlyPressed = false; 
+        let p1EarlyPressed = false;
         let p2EarlyPressed = false;
 
         let particles = [];
         let wanderer = null;
 
+        let gorillaEnabled = false;
+        let gorilla = null;
+        let gorillaStatsP1 = [];
+        let gorillaStatsP2 = [];
+        let gorillaSpawnTimes = [];
+
         // --- Klassen & Logik ---
+
+        class Gorilla {
+            constructor() {
+                this.size = 60; // Same size as center object
+                this.color = COLOR_POOL[Math.floor(Math.random() * COLOR_POOL.length)].hex;
+                
+                let shapes = ['star', 'pentagon', 'hexagon', 'oval', 'semicircle'];
+                this.shape = shapes[Math.floor(Math.random() * shapes.length)];
+                
+                let edge = Math.floor(Math.random() * 4);
+                let speed = Math.max(canvas.width, canvas.height) / 400; // Scale speed to screen size
+                
+                if (edge === 0) { // Top
+                    this.x = Math.random() * canvas.width;
+                    this.y = -this.size;
+                } else if (edge === 1) { // Right
+                    this.x = canvas.width + this.size;
+                    this.y = Math.random() * canvas.height;
+                } else if (edge === 2) { // Bottom
+                    this.x = Math.random() * canvas.width;
+                    this.y = canvas.height + this.size;
+                } else { // Left
+                    this.x = -this.size;
+                    this.y = Math.random() * canvas.height;
+                }
+                
+                // Zielpunkt nahe dem Zentrum
+                let cx = canvas.width / 2;
+                let cy = canvas.height / 2;
+                let targetX = cx + (Math.random() - 0.5) * 150;
+                let targetY = cy + (Math.random() - 0.5) * 150;
+                
+                let dx = targetX - this.x;
+                let dy = targetY - this.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                this.vx = (dx / dist) * speed;
+                this.vy = (dy / dist) * speed;
+                
+                this.spawnTime = performance.now();
+                this.active = true;
+                this.p1Responded = false;
+                this.p2Responded = false;
+            }
+            
+            update() {
+                if (!this.active) return;
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                if (this.x < -100 || this.x > canvas.width + 100 || this.y < -100 || this.y > canvas.height + 100) {
+                    this.active = false;
+                }
+            }
+            
+            draw(ctx) {
+                if (!this.active) return;
+                ctx.fillStyle = this.color;
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(performance.now() * 0.002);
+                
+                ctx.beginPath();
+                if (this.shape === 'star') {
+                    let spikes = 5;
+                    let outerRadius = this.size / 2;
+                    let innerRadius = outerRadius / 2.5;
+                    for (let i = 0; i < spikes * 2; i++) {
+                        let radius = i % 2 === 0 ? outerRadius : innerRadius;
+                        let angle = (i * Math.PI) / spikes;
+                        if (i === 0) ctx.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+                        else ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+                    }
+                } else if (this.shape === 'pentagon') {
+                    let sides = 5;
+                    let radius = this.size / 2;
+                    for (let i = 0; i < sides; i++) {
+                        let angle = (i * 2 * Math.PI) / sides;
+                        if (i === 0) ctx.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+                        else ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+                    }
+                } else if (this.shape === 'hexagon') {
+                    let sides = 6;
+                    let radius = this.size / 2;
+                    for (let i = 0; i < sides; i++) {
+                        let angle = (i * 2 * Math.PI) / sides;
+                        if (i === 0) ctx.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+                        else ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+                    }
+                } else if (this.shape === 'oval') {
+                    ctx.ellipse(0, 0, this.size / 1.5, this.size / 3, 0, 0, Math.PI * 2);
+                } else if (this.shape === 'semicircle') {
+                    ctx.arc(0, 0, this.size / 2, 0, Math.PI);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function handleGorillaInput(player) {
+            if (gorilla && gorilla.active) {
+                if (player === 1 && !gorilla.p1Responded) {
+                    gorilla.p1Responded = true;
+                    let rt = performance.now() - gorilla.spawnTime;
+                    gorillaStatsP1.push(rt);
+                    showFeedback(1, "🦍 " + rt.toFixed(0) + " ms", '#eab308');
+                    return true;
+                } else if (player === 2 && !gorilla.p2Responded && is2Player) {
+                    gorilla.p2Responded = true;
+                    let rt = performance.now() - gorilla.spawnTime;
+                    gorillaStatsP2.push(rt);
+                    showFeedback(2, "🦍 " + rt.toFixed(0) + " ms", '#eab308');
+                    return true;
+                }
+            }
+            return false;
+        }
 
         class Wanderer {
             constructor() {
@@ -214,21 +517,21 @@
                 this.y = this.centerY;
                 this.size = 18;
                 this.baseSpeed = 3;
-                
+
                 // Erzeugt eine zufällige, gut sichtbare, leuchtende Farbe
                 this.color = `hsl(${Math.random() * 360}, 80%, 60%)`;
-                
+
                 const patterns = ['LINEAR', 'SPIRAL', 'SINE', 'ZIGZAG', 'ORBIT_LEAVE'];
                 this.pattern = patterns[Math.floor(Math.random() * patterns.length)];
                 this.angle = Math.random() * Math.PI * 2;
                 this.time = 0;
                 this.radius = 0;
-                this.maxLifeTime = 250 + Math.random() * 150; 
+                this.maxLifeTime = 250 + Math.random() * 150;
             }
 
             update() {
                 this.time += 0.05;
-                
+
                 if (this.pattern === 'LINEAR') {
                     this.x += Math.cos(this.angle) * this.baseSpeed;
                     this.y += Math.sin(this.angle) * this.baseSpeed;
@@ -246,9 +549,9 @@
                     this.y += Math.sin(this.angle) * this.baseSpeed;
                 } else if (this.pattern === 'ORBIT_LEAVE') {
                     this.angle += 0.035;
-                    this.radius += 0.6; 
+                    this.radius += 0.6;
                     this.x = this.centerX + Math.cos(this.angle) * this.radius;
-                    this.y = this.centerY + Math.sin(this.angle) * (this.radius * 0.6); 
+                    this.y = this.centerY + Math.sin(this.angle) * (this.radius * 0.6);
                 }
 
                 if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height || this.time * 20 > this.maxLifeTime) {
@@ -261,7 +564,7 @@
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
-                
+
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size * 0.3, 0, Math.PI * 2);
@@ -272,9 +575,9 @@
         function createParticle() {
             let shape = [STIMULUS_SQUARE, STIMULUS_TRIANGLE, STIMULUS_CIRCLE][Math.floor(Math.random() * 3)];
             let colorObj = COLOR_POOL[Math.floor(Math.random() * COLOR_POOL.length)];
-            
+
             let maxLife = Math.random() * 90 + 30;
-            
+
             let sizeRoll = Math.random();
             let sizeVal;
             if (sizeRoll < 0.33) {
@@ -302,8 +605,8 @@
 
         function setDifficulty(level) {
             currentDifficulty = level;
-            for(let i=1; i<=4; i++) {
-                document.getElementById('btn-diff-'+i).classList.toggle('active', level === i);
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById('btn-diff-' + i).classList.toggle('active', level === i);
             }
             randomizeControls();
         }
@@ -323,6 +626,12 @@
             document.getElementById('btn-2p').classList.add('active');
             document.getElementById('btn-1p').classList.remove('active');
         });
+
+        const gorillaCb = document.getElementById('cb-gorilla');
+        gorillaCb.addEventListener('change', function() {
+            document.getElementById('gorilla-hint').classList.toggle('hidden', !this.checked);
+        });
+        document.getElementById('gorilla-hint').classList.toggle('hidden', !gorillaCb.checked);
 
         document.getElementById('start-btn').addEventListener('click', startGame);
 
@@ -347,22 +656,22 @@
                 p2SquareKey = p2Keys[0]; p2TriangleKey = p2Keys[1]; p2CircleKey = p2Keys[2];
             } else if (currentDifficulty === 3) {
                 let p1Keys = ['a', 'd'].sort(() => 0.5 - Math.random());
-                p1SquareKey = p1Keys[0]; p1TriangleKey = p1Keys[1]; 
+                p1SquareKey = p1Keys[0]; p1TriangleKey = p1Keys[1];
 
                 let p2Keys = ['ArrowLeft', 'ArrowRight'].sort(() => 0.5 - Math.random());
-                p2SquareKey = p2Keys[0]; p2TriangleKey = p2Keys[1]; 
+                p2SquareKey = p2Keys[0]; p2TriangleKey = p2Keys[1];
             } else if (currentDifficulty === 2) {
                 // Level 2: 2 Formen, aber exakt dieselbe Taste für beide
                 let p1Keys = ['a', 's', 'd'].sort(() => 0.5 - Math.random());
-                p1SquareKey = p1Keys[0]; p1TriangleKey = p1Keys[0]; 
+                p1SquareKey = p1Keys[0]; p1TriangleKey = p1Keys[0];
 
                 let p2Keys = ['ArrowLeft', 'ArrowDown', 'ArrowRight'].sort(() => 0.5 - Math.random());
-                p2SquareKey = p2Keys[0]; p2TriangleKey = p2Keys[0]; 
+                p2SquareKey = p2Keys[0]; p2TriangleKey = p2Keys[0];
             } else {
                 // Level 1: 1 Form, 1 Taste
                 let p1Keys = ['a', 's', 'd'].sort(() => 0.5 - Math.random());
                 p1SquareKey = p1Keys[0];
-                
+
                 let p2Keys = ['ArrowLeft', 'ArrowDown', 'ArrowRight'].sort(() => 0.5 - Math.random());
                 p2SquareKey = p2Keys[0];
             }
@@ -403,20 +712,20 @@
             // Textfarben und Namen
             document.getElementById('title-sq').className = colorSq.textClass;
             document.getElementById('title-sq').textContent = `${colorSq.name} Quadrat`;
-            
+
             document.getElementById('title-tr').className = colorTr.textClass;
             document.getElementById('title-tr').textContent = `${colorTr.name} Dreieck`;
 
             document.getElementById('title-ci').className = colorCi.textClass;
             document.getElementById('title-ci').textContent = `${colorCi.name} Kreis`;
-            
+
             const liSq = document.getElementById('li-rule-sq');
             const liTr = document.getElementById('li-rule-tr');
             const liCi = document.getElementById('li-rule-ci');
-            
+
             const txtP1Sq = `S1 (Linker Spieler): Taste <b>${getKeyName(p1SquareKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p1SquareKey, 'Links')}</span>`;
             const txtP2Sq = `S2 (Rechter Spieler): Taste <b>${getKeyName(p2SquareKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p2SquareKey, 'Rechts')}</span>`;
-            
+
             const txtP1Tr = `S1 (Linker Spieler): Taste <b>${getKeyName(p1TriangleKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p1TriangleKey, 'Links')}</span>`;
             const txtP2Tr = `S2 (Rechter Spieler): Taste <b>${getKeyName(p2TriangleKey)}</b> <br> <span class="text-slate-400 text-xs">Touch: ${getZoneName(p2TriangleKey, 'Rechts')}</span>`;
 
@@ -446,12 +755,24 @@
             }
 
             uiMenu.classList.add('hidden');
-            touchLayer.classList.remove('hidden'); 
+            touchLayer.classList.remove('hidden');
             statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
             statsP2 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
             currentTrial = 0;
+
+            gorillaEnabled = document.getElementById('cb-gorilla').checked;
+            gorilla = null;
+            gorillaStatsP1 = [];
+            gorillaStatsP2 = [];
+            gorillaSpawnTimes = [];
+            if (gorillaEnabled) {
+                let t1 = Math.floor(Math.random() * 5) + 2; // trial 2 to 6
+                let t2 = Math.floor(Math.random() * 5) + 9; // trial 9 to 13
+                gorillaSpawnTimes.push(t1, t2);
+            }
+
             particles = [];
-            for (let i=0; i<25; i++) particles.push(createParticle());
+            for (let i = 0; i < 25; i++) particles.push(createParticle());
             wanderer = new Wanderer();
             scheduleNextTrial();
         }
@@ -462,14 +783,20 @@
             p2Responded = false;
             p1EarlyPressed = false;
             p2EarlyPressed = false;
-            let delay = 1500 + Math.random() * 2000;
+            let delay = 2000 + Math.random() * 3000;
             setTimeout(showStimulus, delay);
         }
 
         function showStimulus() {
             gameState = STATE_STIMULUS;
             timeStimulusShown = performance.now();
-            
+
+            if (gorillaEnabled && gorillaSpawnTimes.includes(currentTrial)) {
+                if (!gorilla || !gorilla.active) {
+                    gorilla = new Gorilla();
+                }
+            }
+
             // 20% Chance für No-Go
             if (Math.random() < 0.20) {
                 currentTargetType = STIMULUS_NOGO;
@@ -486,17 +813,17 @@
                     else currentTargetType = STIMULUS_CIRCLE;
                 }
             }
-            
+
             let timeLimit = currentTargetType === STIMULUS_NOGO ? 1500 : 2500;
             timeoutId = setTimeout(() => checkRoundEnd(true), timeLimit);
         }
 
         function checkRoundEnd(isTimeout = false) {
             if (gameState !== STATE_STIMULUS) return;
-            
+
             let p1Done = p1Responded || !is2Player;
             let p2Done = p2Responded || !is2Player;
-            
+
             if (isTimeout) {
                 // Zeit abgelaufen: Prüfen, ob jemand verpasst hat
                 if (currentTargetType !== STIMULUS_NOGO) {
@@ -527,10 +854,10 @@
         function showFeedback(player, text, color = '#f87171') {
             const el = document.getElementById(player === 1 ? 'feedback-p1' : 'feedback-p2');
             if (!el) return;
-            
+
             if (!is2Player && player === 1) {
                 el.style.left = '50%';
-                el.style.top = '30%'; 
+                el.style.top = '30%';
             } else {
                 el.style.left = player === 1 ? '25%' : '75%';
                 el.style.top = '30%';
@@ -538,31 +865,31 @@
 
             el.textContent = text;
             el.style.color = color;
-            
+
             el.style.transition = 'none';
             el.style.opacity = 1;
-            
+
             void el.offsetWidth; // Reflow erzwingen
-            
+
             el.style.transition = 'opacity 0.4s ease-out';
-            
+
             if (el.hideTimeout) clearTimeout(el.hideTimeout);
             el.hideTimeout = setTimeout(() => { el.style.opacity = 0; }, 800);
         }
 
-        function handleInput(player, type) {
+        function handleInput(player, type, forcedRt = null) {
             if (gameState === STATE_INTERTRIAL) {
-                if (player === 1 && !p1EarlyPressed) { 
-                    statsP1.impulseErrors++; p1EarlyPressed = true; showFeedback(1, "Zu früh!"); 
+                if (player === 1 && !p1EarlyPressed) {
+                    statsP1.impulseErrors++; p1EarlyPressed = true; showFeedback(1, "Zu früh!");
                 }
-                if (player === 2 && !p2EarlyPressed && is2Player) { 
-                    statsP2.impulseErrors++; p2EarlyPressed = true; showFeedback(2, "Zu früh!"); 
+                if (player === 2 && !p2EarlyPressed && is2Player) {
+                    statsP2.impulseErrors++; p2EarlyPressed = true; showFeedback(2, "Zu früh!");
                 }
                 return;
             }
-            
+
             if (gameState !== STATE_STIMULUS) return;
-            
+
             if (currentTargetType === STIMULUS_NOGO) {
                 if (player === 1 && !p1Responded) {
                     statsP1.impulseErrors++; p1Responded = true; showFeedback(1, "Falscher Alarm!");
@@ -571,18 +898,18 @@
                 }
             } else {
                 if (player === 1 && !p1Responded) {
-                    let rt = performance.now() - timeStimulusShown;
+                    let rt = forcedRt !== null ? forcedRt : (performance.now() - timeStimulusShown);
                     statsP1.rt.push(rt); p1Responded = true;
-                    if (type === currentTargetType) { statsP1.correct++; showFeedback(1, rt.toFixed(0) + " ms", '#4ade80'); } 
+                    if (type === currentTargetType) { statsP1.correct++; showFeedback(1, rt.toFixed(0) + " ms", '#4ade80'); }
                     else { statsP1.formErrors++; showFeedback(1, "Falsche Taste!"); }
                 } else if (player === 2 && !p2Responded && is2Player) {
-                    let rt = performance.now() - timeStimulusShown;
+                    let rt = forcedRt !== null ? forcedRt : (performance.now() - timeStimulusShown);
                     statsP2.rt.push(rt); p2Responded = true;
-                    if (type === currentTargetType) { statsP2.correct++; showFeedback(2, rt.toFixed(0) + " ms", '#4ade80'); } 
+                    if (type === currentTargetType) { statsP2.correct++; showFeedback(2, rt.toFixed(0) + " ms", '#4ade80'); }
                     else { statsP2.formErrors++; showFeedback(2, "Falsche Taste!"); }
                 }
             }
-            
+
             checkRoundEnd(false);
         }
 
@@ -609,54 +936,108 @@
         }
 
         // Tasten-Input
+        let keysDown = new Set();
         document.addEventListener('keydown', (e) => {
             if (gameState === STATE_MENU || gameState === STATE_RESULTS) return;
             const kLow = e.key.toLowerCase();
-            const kRaw = e.key; 
+            const kRaw = e.key;
+            if (!e.repeat) keysDown.add(kLow);
 
             const p1Set = ['a', 's', 'd'];
-            if (p1Set.includes(kLow)) {
-                let typeSent = getPlayerInputType(kLow, p1SquareKey, p1TriangleKey, p1CircleKey, currentDifficulty, currentTargetType);
-                handleInput(1, typeSent);
+            if (p1Set.includes(kLow) && !e.repeat) {
+                let rt = performance.now() - timeStimulusShown;
+                let processP1 = () => {
+                    let p1Count = p1Set.filter(k => keysDown.has(k)).length;
+                    if (p1Count >= 2 && gorilla && gorilla.active) {
+                        handleGorillaInput(1);
+                    } else {
+                        let typeSent = getPlayerInputType(kLow, p1SquareKey, p1TriangleKey, p1CircleKey, currentDifficulty, currentTargetType);
+                        handleInput(1, typeSent, rt);
+                    }
+                };
+                if (gorilla && gorilla.active) setTimeout(processP1, 50);
+                else processP1();
             }
-            
-            const p2Set = ['ArrowLeft', 'ArrowDown', 'ArrowRight'];
-            if (p2Set.includes(kRaw)) {
-                const playerIdx = is2Player ? 2 : 1;
-                let typeSent = getPlayerInputType(kRaw, p2SquareKey, p2TriangleKey, p2CircleKey, currentDifficulty, currentTargetType);
-                handleInput(playerIdx, typeSent);
+
+            const p2Set = ['arrowleft', 'arrowdown', 'arrowright'];
+            let kLow2 = kRaw.toLowerCase();
+            if (p2Set.includes(kLow2) && !e.repeat) {
+                let rt = performance.now() - timeStimulusShown;
+                let processP2 = () => {
+                    const playerIdx = is2Player ? 2 : 1;
+                    let p2Count = p2Set.filter(k => keysDown.has(k)).length;
+                    if (p2Count >= 2 && gorilla && gorilla.active) {
+                        handleGorillaInput(playerIdx);
+                    } else {
+                        let typeSent = getPlayerInputType(kRaw, p2SquareKey, p2TriangleKey, p2CircleKey, currentDifficulty, currentTargetType);
+                        handleInput(playerIdx, typeSent, rt);
+                    }
+                };
+                if (gorilla && gorilla.active) setTimeout(processP2, 50);
+                else processP2();
             }
+        });
+        document.addEventListener('keyup', (e) => {
+            keysDown.delete(e.key.toLowerCase());
         });
 
         // Touch-Input (Zonen direkt mit Form verknüpfen)
+        let activeP1Zones = new Set();
+        let activeP2Zones = new Set();
+
         function bindTouch(id, player, zonePos) {
             const el = document.getElementById(id);
             if (!el) return;
-            
-            const handleTouch = (e) => {
+
+            const handleTouchStart = (e) => {
                 if (e.cancelable) e.preventDefault();
-                let type = null;
                 
-                if (currentDifficulty <= 2) {
-                    type = (currentTargetType === STIMULUS_TRIANGLE) ? STIMULUS_TRIANGLE : STIMULUS_SQUARE; 
-                } else if (currentDifficulty === 3) {
-                    if (zonePos === 'top') type = STIMULUS_SQUARE;
-                    if (zonePos === 'bottom') type = STIMULUS_TRIANGLE;
-                } else if (currentDifficulty === 4) {
-                    if (zonePos === 'top') type = STIMULUS_SQUARE;
-                    if (zonePos === 'middle') type = STIMULUS_TRIANGLE;
-                    if (zonePos === 'bottom') type = STIMULUS_CIRCLE;
-                }
+                if (player === 1) activeP1Zones.add(id);
+                else activeP2Zones.add(id);
+
+                let rt = performance.now() - timeStimulusShown;
                 
-                if (!type) return;
-                
-                el.classList.add('active-tap');
-                setTimeout(() => el.classList.remove('active-tap'), 150);
-                handleInput(player, type);
+                let processTouch = () => {
+                    let zoneCount = player === 1 ? activeP1Zones.size : activeP2Zones.size;
+                    
+                    if (zoneCount >= 2 && gorilla && gorilla.active) {
+                        handleGorillaInput(player);
+                    } else {
+                        let type = null;
+                        if (currentDifficulty <= 2) {
+                            type = (currentTargetType === STIMULUS_TRIANGLE) ? STIMULUS_TRIANGLE : STIMULUS_SQUARE;
+                        } else if (currentDifficulty === 3) {
+                            if (zonePos === 'top') type = STIMULUS_SQUARE;
+                            if (zonePos === 'bottom') type = STIMULUS_TRIANGLE;
+                        } else if (currentDifficulty === 4) {
+                            if (zonePos === 'top') type = STIMULUS_SQUARE;
+                            if (zonePos === 'middle') type = STIMULUS_TRIANGLE;
+                            if (zonePos === 'bottom') type = STIMULUS_CIRCLE;
+                        }
+
+                        if (!type) return;
+
+                        el.classList.add('active-tap');
+                        setTimeout(() => el.classList.remove('active-tap'), 150);
+
+                        handleInput(player, type, rt);
+                    }
+                };
+
+                if (gorilla && gorilla.active) setTimeout(processTouch, 50);
+                else processTouch();
             };
 
-            el.addEventListener('touchstart', handleTouch, { passive: false });
-            el.addEventListener('mousedown', handleTouch); // Für Tests mit der Maus
+            const handleTouchEnd = (e) => {
+                if (player === 1) activeP1Zones.delete(id);
+                else activeP2Zones.delete(id);
+            };
+
+            el.addEventListener('touchstart', handleTouchStart, { passive: false });
+            el.addEventListener('touchend', handleTouchEnd);
+            el.addEventListener('touchcancel', handleTouchEnd);
+            el.addEventListener('mousedown', handleTouchStart); // Maus-Unterstützung
+            el.addEventListener('mouseup', handleTouchEnd);
         }
 
         bindTouch('touch-p1-top', 1, 'top');
@@ -669,14 +1050,14 @@
         function endGame() {
             gameState = STATE_RESULTS;
             touchLayer.classList.add('hidden');
-            
+
             let winnerHTML = "";
 
             if (is2Player) {
                 let err1 = statsP1.formErrors + statsP1.impulseErrors + statsP1.missErrors;
                 let err2 = statsP2.formErrors + statsP2.impulseErrors + statsP2.missErrors;
-                let rtRaw1 = statsP1.rt.length > 0 ? (statsP1.rt.reduce((a,b)=>a+b,0)/statsP1.rt.length) : Infinity;
-                let rtRaw2 = statsP2.rt.length > 0 ? (statsP2.rt.reduce((a,b)=>a+b,0)/statsP2.rt.length) : Infinity;
+                let rtRaw1 = statsP1.rt.length > 0 ? (statsP1.rt.reduce((a, b) => a + b, 0) / statsP1.rt.length) : Infinity;
+                let rtRaw2 = statsP2.rt.length > 0 ? (statsP2.rt.reduce((a, b) => a + b, 0) / statsP2.rt.length) : Infinity;
 
                 let winnerText = "";
                 if (err1 < err2) {
@@ -691,20 +1072,31 @@
                 winnerHTML = `<h3 class="text-2xl font-bold text-yellow-400 mb-4 text-center border-b border-slate-600 pb-4">${winnerText}</h3>`;
             }
             document.getElementById('winner-announcement').innerHTML = winnerHTML;
-            
-            const createStatsHTML = (name, stats) => {
-                let avgRtRaw = stats.rt.length > 0 ? (stats.rt.reduce((a,b)=>a+b,0)/stats.rt.length) : Infinity;
+
+            const createStatsHTML = (name, stats, gStats) => {
+                let avgRtRaw = stats.rt.length > 0 ? (stats.rt.reduce((a, b) => a + b, 0) / stats.rt.length) : Infinity;
                 let avgRt = avgRtRaw !== Infinity ? avgRtRaw.toFixed(0) + " ms" : "Keine";
                 let bestRt = stats.rt.length > 0 ? Math.min(...stats.rt).toFixed(0) + " ms" : "Keine";
-                
+
                 let accuracy = Math.round((stats.correct / MAX_TRIALS) * 100);
                 let totalErrors = stats.formErrors + stats.impulseErrors + stats.missErrors;
-                
+
                 let evalText = "";
                 if (stats.impulseErrors > 2) evalText = "<span class='text-red-400'>Impulsiv. Fokus verlagert sich zu schnell.</span>";
                 else if (stats.missErrors > 2) evalText = "<span class='text-red-400'>Unaufmerksam. Reize werden verpasst.</span>";
                 else if (avgRtRaw !== Infinity && avgRtRaw < 450 && accuracy > 85) evalText = "<span class='text-green-400'>Exzellente Fixationskontrolle!</span>";
                 else evalText = "<span class='text-yellow-400'>Augen sind dem Wanderer gefolgt (Zeitverlust).</span>";
+
+                let gorillaText = "";
+                if (gorillaEnabled) {
+                    let gAvg = gStats.length > 0 ? (gStats.reduce((a,b)=>a+b,0)/gStats.length).toFixed(0) + " ms" : "Verpasst";
+                    let gColor = gStats.length > 0 ? "text-yellow-400" : "text-red-400";
+                    gorillaText = `
+                        <hr class="border-slate-600 my-2">
+                        <p class="mb-1 text-slate-300 text-sm">🦍 Gorilla erkannt: <b class="${gColor}">${gStats.length} / ${gorillaSpawnTimes.length}</b></p>
+                        <p class="mb-1 text-slate-300 text-sm">🦍 Gorilla Reaktionszeit (Ø): <b class="${gColor}">${gAvg}</b></p>
+                    `;
+                }
 
                 return `
                     <div class="bg-slate-800 p-4 rounded-lg border ${accuracy > 80 ? 'border-green-500' : 'border-slate-600'} text-left">
@@ -717,14 +1109,15 @@
                         <p class="mb-1 text-slate-300 text-sm">├ Form-Fehler (Falsche Taste): <b class="text-red-300">${stats.formErrors}</b></p>
                         <p class="mb-1 text-slate-300 text-sm">├ Ausgelassen (Verpasst): <b class="text-red-300">${stats.missErrors}</b></p>
                         <p class="mb-3 text-slate-300 text-sm">└ Impuls-Fehler (Zu früh / No-Go): <b class="text-red-300">${stats.impulseErrors}</b></p>
+                        ${gorillaText}
                         <p class="text-sm italic text-center mt-2">${evalText}</p>
                     </div>
                 `;
             };
 
-            let html = createStatsHTML("Linker Spieler (S1)", statsP1);
-            if (is2Player) html += createStatsHTML("Rechter Spieler (S2)", statsP2);
-            
+            let html = createStatsHTML("Linker Spieler (S1)", statsP1, gorillaStatsP1);
+            if (is2Player) html += createStatsHTML("Rechter Spieler (S2)", statsP2, gorillaStatsP2);
+
             statsContainer.innerHTML = html;
             uiResults.classList.remove('hidden');
         }
@@ -735,13 +1128,13 @@
             ctx.fillStyle = colorObj.hex;
             ctx.beginPath();
             if (type === STIMULUS_SQUARE) {
-                ctx.rect(x - size/2, y - size/2, size, size);
+                ctx.rect(x - size / 2, y - size / 2, size, size);
             } else if (type === STIMULUS_TRIANGLE) {
-                ctx.moveTo(x, y - size/2);
-                ctx.lineTo(x + size/2, y + size/2);
-                ctx.lineTo(x - size/2, y + size/2);
+                ctx.moveTo(x, y - size / 2);
+                ctx.lineTo(x + size / 2, y + size / 2);
+                ctx.lineTo(x - size / 2, y + size / 2);
             } else if (type === STIMULUS_CIRCLE) {
-                ctx.arc(x, y, size/2, 0, Math.PI * 2);
+                ctx.arc(x, y, size / 2, 0, Math.PI * 2);
             }
             ctx.fill();
         }
@@ -753,12 +1146,12 @@
             // Hintergrund Partikel (Ablenkung)
             particles.forEach(p => {
                 p.x += p.vx; p.y += p.vy; p.life--;
-                
+
                 // Neu generieren, wenn Lebensdauer abgelaufen oder aus dem Bild geflogen
                 if (p.life <= 0 || p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
                     Object.assign(p, createParticle());
                 }
-                
+
                 // Partikel starten immer mit einer konstanten, starken Deckkraft (70%)
                 // Faden erst in den letzten 15 Frames der Lebensdauer sanft aus, damit sie nicht abrupt verschwinden
                 let opacity = 0.7;
@@ -766,9 +1159,9 @@
                     opacity = 0.7 * (p.life / 15);
                 }
                 ctx.globalAlpha = opacity;
-                
+
                 // Form zeichnen
-                drawTargetShape(ctx, p.x, p.y, p.size, p.shape, {hex: p.color});
+                drawTargetShape(ctx, p.x, p.y, p.size, p.shape, { hex: p.color });
             });
             ctx.globalAlpha = 1.0;
 
@@ -779,6 +1172,11 @@
                 // Wanderer (rote Ablenkung mit weißem Punkt)
                 wanderer.update();
                 wanderer.draw(ctx);
+
+                if (gorilla && gorilla.active) {
+                    gorilla.update();
+                    gorilla.draw(ctx);
+                }
 
                 // Zentrum (Fixationskreuz oder Target)
                 if (gameState === STATE_INTERTRIAL) {
@@ -791,7 +1189,7 @@
                 } else if (gameState === STATE_STIMULUS) {
                     const size = 60;
                     if (currentTargetType === STIMULUS_NOGO) {
-                        if (currentNoGoType === 0) drawTargetShape(ctx, cx, cy, size, STIMULUS_CIRCLE, {hex: '#ef4444'}); // Roter Kreis
+                        if (currentNoGoType === 0) drawTargetShape(ctx, cx, cy, size, STIMULUS_CIRCLE, { hex: '#ef4444' }); // Roter Kreis
                         else if (currentNoGoType === 1) drawTargetShape(ctx, cx, cy, size, STIMULUS_SQUARE, colorTr); // Vertauschte Farbe
                         else if (currentNoGoType === 2) drawTargetShape(ctx, cx, cy, size, STIMULUS_TRIANGLE, colorSq);
                         else drawTargetShape(ctx, cx, cy, size, STIMULUS_CIRCLE, colorSq);
@@ -813,4 +1211,5 @@
         gameLoop();
     </script>
 </body>
+
 </html>
