@@ -982,8 +982,23 @@
         });
 
         // Touch-Input (Zonen direkt mit Form verknüpfen)
-        let activeP1Zones = new Set();
-        let activeP2Zones = new Set();
+        let activeP1Touches = 0;
+        let activeP2Touches = 0;
+
+        function updateTouches(e) {
+            activeP1Touches = 0;
+            activeP2Touches = 0;
+            if (!e.touches) return;
+            let halfWidth = window.innerWidth / 2;
+            for (let i = 0; i < e.touches.length; i++) {
+                if (e.touches[i].clientX <= halfWidth) activeP1Touches++;
+                else activeP2Touches++;
+            }
+        }
+
+        window.addEventListener('touchstart', updateTouches, { passive: true });
+        window.addEventListener('touchend', updateTouches, { passive: true });
+        window.addEventListener('touchcancel', updateTouches, { passive: true });
 
         function bindTouch(id, player, zonePos) {
             const el = document.getElementById(id);
@@ -992,15 +1007,13 @@
             const handleTouchStart = (e) => {
                 if (e.cancelable) e.preventDefault();
                 
-                if (player === 1) activeP1Zones.add(id);
-                else activeP2Zones.add(id);
-
                 let rt = performance.now() - timeStimulusShown;
                 
                 let processTouch = () => {
-                    let zoneCount = player === 1 ? activeP1Zones.size : activeP2Zones.size;
+                    let tCount = player === 1 ? activeP1Touches : activeP2Touches;
+                    if (e.type.startsWith('mouse')) tCount = 1;
                     
-                    if (zoneCount >= 2 && gorilla && gorilla.active) {
+                    if (tCount >= 2 && gorilla && gorilla.active) {
                         handleGorillaInput(player);
                     } else {
                         let type = null;
@@ -1028,16 +1041,8 @@
                 else processTouch();
             };
 
-            const handleTouchEnd = (e) => {
-                if (player === 1) activeP1Zones.delete(id);
-                else activeP2Zones.delete(id);
-            };
-
             el.addEventListener('touchstart', handleTouchStart, { passive: false });
-            el.addEventListener('touchend', handleTouchEnd);
-            el.addEventListener('touchcancel', handleTouchEnd);
             el.addEventListener('mousedown', handleTouchStart); // Maus-Unterstützung
-            el.addEventListener('mouseup', handleTouchEnd);
         }
 
         bindTouch('touch-p1-top', 1, 'top');
