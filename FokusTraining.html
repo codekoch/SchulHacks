@@ -226,40 +226,45 @@
 
     <div id="ui-menu" class="ui-layer">
         <div class="ui-content border border-slate-700">
-            <h1 class="text-3xl font-bold mb-4 text-white">Fokus-Wächter</h1>
+            <h1 class="text-3xl font-bold mb-4 text-white">Aufmerksamkeits- und Reaktionstrainer</h1>
 
             <div
                 class="bg-blue-900/40 border border-blue-500 text-blue-200 p-4 rounded-lg mb-6 text-sm shadow-lg text-left">
-                <strong class="text-white block mb-1 text-base">🎯 WICHTIGE AUFGABE:</strong>
+                <strong class="text-white block mb-1 text-base">🎯 IHRE AUFGABE:</strong>
                 Fixieren Sie durchgehend das Zentrum! Drücken Sie <b>NUR</b> für die exakt unten genannten Kombinationen
                 aus Form und Farbe.<br><br>
-                Reagieren Sie bei allen anderen auftauchenden Symbolen, falschen Farben oder sonstigen Ablenkungen (wie
-                dem roten Punkt) absolut <b>NICHT</b>!
+                Reagieren Sie bei allen anderen auftauchenden Symbolen, falschen Farben oder sonstigen Ablenkungen
+                absolut <b>NICHT</b> <br>(Ausnahme: Opaque Gorilla Option falls aktiviert).
                 <br><br><span class="text-yellow-300"><b>Achtung:</b> Bitte vor jedem Start gut durchlesen, da die
                     Farben, Formen und Tasten bei jedem Spiel rotieren.</span>
             </div>
 
             <div class="flex gap-2 justify-center mb-4 flex-wrap">
-                <button id="btn-diff-1" class="btn mode-btn text-xs px-3 py-2">Level 1 (1 Form)</button>
-                <button id="btn-diff-2" class="btn mode-btn active text-xs px-3 py-2">Level 2 (1 Taste)</button>
-                <button id="btn-diff-3" class="btn mode-btn text-xs px-3 py-2">Level 3 (2 Tasten)</button>
-                <button id="btn-diff-4" class="btn mode-btn text-xs px-3 py-2">Level 4 (3 Formen)</button>
+                <button id="btn-diff-1" class="btn mode-btn active text-xs px-3 py-2">Level 1</button>
+                <button id="btn-diff-2" class="btn mode-btn text-xs px-3 py-2">Level 2</button>
+                <button id="btn-diff-3" class="btn mode-btn text-xs px-3 py-2">Level 3</button>
+                <button id="btn-diff-4" class="btn mode-btn text-xs px-3 py-2">Level 4</button>
             </div>
 
             <div class="flex gap-4 justify-center mb-6">
                 <button id="btn-1p" class="btn mode-btn active">1 Spieler</button>
                 <button id="btn-2p" class="btn mode-btn">2 Spieler</button>
             </div>
-            
+
             <div class="flex flex-col items-center justify-center mb-6">
-                <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white bg-slate-800 px-4 py-2 rounded border border-slate-600">
+                <label
+                    class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white bg-slate-800 px-4 py-2 rounded border border-slate-600">
                     <input type="checkbox" id="cb-gorilla" class="w-5 h-5 accent-blue-500">
                     Opaque Gorilla Option
                 </label>
-                <div id="gorilla-hint" class="hidden text-xs text-yellow-300 mt-2 bg-slate-800/80 p-3 rounded max-w-md border border-yellow-500/30 text-left">
-                    <b>Sonderform erkennen:</b> Falls eine Form erscheint, die kein Dreieck, Quadrat oder Kreis ist, bestätige dies sofort:<br>
-                    <span class="text-white mt-1 block"><b>S1 (Links):</b> 2 Tasten aus [A, S, D] oder 2 linke Touchzonen gleichzeitig.</span>
-                    <span class="text-white block"><b>S2 (Rechts):</b> 2 Pfeiltasten [←, ↓, →] oder 2 rechte Touchzonen gleichzeitig.</span>
+                <div id="gorilla-hint"
+                    class="hidden text-xs text-yellow-300 mt-2 bg-slate-800/80 p-3 rounded max-w-md border border-yellow-500/30 text-left">
+                    <b>Sonderform erkennen:</b> Falls eine Form erscheint, die kein Dreieck, Quadrat oder Kreis ist,
+                    bestätige dies sofort:<br>
+                    <span class="text-white mt-1 block"><b>S1 (Links):</b> 2 Tasten aus [A, S, D] oder 2 linke
+                        Touchzonen gleichzeitig.</span>
+                    <span class="text-white block"><b>S2 (Rechts):</b> 2 Pfeiltasten [←, ↓, →] oder 2 rechte Touchzonen
+                        gleichzeitig.</span>
                 </div>
             </div>
 
@@ -286,8 +291,7 @@
                 </ul>
             </div>
 
-            <button id="start-btn" class="btn w-full text-lg shadow-lg shadow-blue-500/20">Training Starten (15
-                Runden)</button>
+            <button id="start-btn" class="btn w-full text-lg shadow-lg shadow-blue-500/20">Training Starten</button>
         </div>
     </div>
 
@@ -358,7 +362,7 @@
 
         let gameState = STATE_MENU;
         let is2Player = false;
-        let currentDifficulty = 2; // Geändert auf 2 für den Startwert
+        let currentDifficulty = 1;
         let currentTrial = 0;
 
         let statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
@@ -390,13 +394,13 @@
             constructor() {
                 this.size = 60; // Same size as center object
                 this.color = COLOR_POOL[Math.floor(Math.random() * COLOR_POOL.length)].hex;
-                
+
                 let shapes = ['star', 'pentagon', 'hexagon', 'oval', 'semicircle'];
                 this.shape = shapes[Math.floor(Math.random() * shapes.length)];
-                
+
                 let edge = Math.floor(Math.random() * 4);
                 let speed = Math.max(canvas.width, canvas.height) / 400; // Scale speed to screen size
-                
+
                 if (edge === 0) { // Top
                     this.x = Math.random() * canvas.width;
                     this.y = -this.size;
@@ -410,44 +414,44 @@
                     this.x = -this.size;
                     this.y = Math.random() * canvas.height;
                 }
-                
+
                 // Zielpunkt nahe dem Zentrum
                 let cx = canvas.width / 2;
                 let cy = canvas.height / 2;
                 let targetX = cx + (Math.random() - 0.5) * 150;
                 let targetY = cy + (Math.random() - 0.5) * 150;
-                
+
                 let dx = targetX - this.x;
                 let dy = targetY - this.y;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                
+                let dist = Math.sqrt(dx * dx + dy * dy);
+
                 this.vx = (dx / dist) * speed;
                 this.vy = (dy / dist) * speed;
-                
+
                 this.spawnTime = performance.now();
                 this.active = true;
                 this.p1Responded = false;
                 this.p2Responded = false;
             }
-            
+
             update() {
                 if (!this.active) return;
                 this.x += this.vx;
                 this.y += this.vy;
-                
+
                 if (this.x < -100 || this.x > canvas.width + 100 || this.y < -100 || this.y > canvas.height + 100) {
                     this.active = false;
                 }
             }
-            
+
             draw(ctx) {
                 if (!this.active) return;
                 ctx.fillStyle = this.color;
-                
+
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(performance.now() * 0.002);
-                
+
                 ctx.beginPath();
                 if (this.shape === 'star') {
                     let spikes = 5;
@@ -628,7 +632,7 @@
         });
 
         const gorillaCb = document.getElementById('cb-gorilla');
-        gorillaCb.addEventListener('change', function() {
+        gorillaCb.addEventListener('change', function () {
             document.getElementById('gorilla-hint').classList.toggle('hidden', !this.checked);
         });
         document.getElementById('gorilla-hint').classList.toggle('hidden', !gorillaCb.checked);
@@ -1006,13 +1010,13 @@
 
             const handleTouchStart = (e) => {
                 if (e.cancelable) e.preventDefault();
-                
+
                 let rt = performance.now() - timeStimulusShown;
-                
+
                 let processTouch = () => {
                     let tCount = player === 1 ? activeP1Touches : activeP2Touches;
                     if (e.type.startsWith('mouse')) tCount = 1;
-                    
+
                     if (tCount >= 2 && gorilla && gorilla.active) {
                         handleGorillaInput(player);
                     } else {
@@ -1094,7 +1098,7 @@
 
                 let gorillaText = "";
                 if (gorillaEnabled) {
-                    let gAvg = gStats.length > 0 ? (gStats.reduce((a,b)=>a+b,0)/gStats.length).toFixed(0) + " ms" : "Verpasst";
+                    let gAvg = gStats.length > 0 ? (gStats.reduce((a, b) => a + b, 0) / gStats.length).toFixed(0) + " ms" : "Verpasst";
                     let gColor = gStats.length > 0 ? "text-yellow-400" : "text-red-400";
                     gorillaText = `
                         <hr class="border-slate-600 my-2">
