@@ -23,6 +23,34 @@
         .touch-column { width: 50%; height: 100%; display: flex; flex-direction: column; pointer-events: auto; }
         .touch-zone { flex: 1; border: 1px solid rgba(255,255,255,0.05); opacity: 0; transition: opacity 0.1s; cursor: pointer; }
         .touch-zone.active-tap { background-color: rgba(255, 255, 255, 0.15); opacity: 1; }
+
+        /* Anpassungen für Smartphone Landscape und kleine Bildschirme */
+        @media (max-height: 600px) {
+            .ui-content { padding: 1rem; width: 95vw; max-width: 800px; max-height: 98vh; }
+            h1 { font-size: 1.5rem !important; margin-bottom: 0.5rem !important; }
+            h2 { font-size: 1.5rem !important; margin-bottom: 0.5rem !important; }
+            .mb-6 { margin-bottom: 0.5rem !important; }
+            .mb-4 { margin-bottom: 0.5rem !important; }
+            .p-4 { padding: 0.5rem 1rem !important; }
+            .btn { padding: 0.5rem 1rem; font-size: 0.85rem; }
+            .text-sm { font-size: 0.8rem !important; line-height: 1.2 !important; }
+            .text-xs { font-size: 0.75rem !important; }
+            
+            /* Kompaktere Anleitungstexte */
+            h1 + div { padding: 0.5rem 1rem !important; margin-bottom: 0.5rem !important; }
+            h1 + div br + br { display: none; }
+            h1 + div strong { display: inline-block; margin-right: 0.5rem; margin-bottom: 0; }
+            
+            /* Kompaktere Regeln */
+            .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.25rem !important; }
+            #rule-sq, #rule-tr, #rule-ci { padding: 0.25rem 0.5rem !important; }
+            
+            /* Kompaktere Stats */
+            #stats-container { gap: 0.5rem !important; margin-bottom: 0.5rem !important; margin-top: 0.25rem !important; }
+            #stats-container h3 { font-size: 1.1rem !important; margin-bottom: 0.25rem !important; }
+            #stats-container p { margin-bottom: 0.1rem !important; font-size: 0.75rem !important; }
+            #stats-container > div { padding: 0.5rem !important; }
+        }
     </style>
 </head>
 <body class="text-slate-100">
@@ -407,6 +435,16 @@
         // --- Spiel Ablauf ---
 
         function startGame() {
+            // Vollbildmodus anfordern
+            let elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => console.log(err));
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen().catch(err => console.log(err));
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                elem.msRequestFullscreen().catch(err => console.log(err));
+            }
+
             uiMenu.classList.add('hidden');
             touchLayer.classList.remove('hidden'); 
             statsP1 = { rt: [], correct: 0, formErrors: 0, impulseErrors: 0, missErrors: 0 };
