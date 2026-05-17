@@ -11,7 +11,7 @@
             margin: 0;
             overflow: hidden;
             background-color: #0f172a;
-            touch-action: none;
+            overscroll-behavior: none;
             font-family: sans-serif;
         }
 
@@ -23,6 +23,7 @@
             top: 0;
             left: 0;
             z-index: 1;
+            touch-action: none;
         }
 
         .ui-layer {
@@ -50,6 +51,7 @@
             max-height: 95vh;
             overflow-y: auto;
             text-align: center;
+            touch-action: pan-y;
         }
 
         .btn {
@@ -85,6 +87,7 @@
             z-index: 10;
             display: flex;
             pointer-events: none;
+            touch-action: none;
         }
 
         .touch-column {
@@ -109,7 +112,7 @@
         }
 
         /* Anpassungen für Smartphone Landscape und kleine Bildschirme */
-        @media (max-height: 600px) {
+        @media (max-height: 600px), (max-width: 600px) {
             .ui-content {
                 padding: 1rem;
                 width: 95vw;
@@ -1010,6 +1013,8 @@
 
             const handleTouchStart = (e) => {
                 if (e.cancelable) e.preventDefault();
+
+                updateTouches(e);
 
                 let rt = performance.now() - timeStimulusShown;
 
