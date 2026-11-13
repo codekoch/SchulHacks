@@ -107,6 +107,13 @@ h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mu
 .mrow small{color:var(--muted);font-size:.7rem;display:block}
 .param{display:grid;grid-template-columns:7.5em 1fr auto;align-items:center;gap:8px;margin:6px 0}
 .param .map{font-size:.72rem;color:var(--muted);grid-column:2 / 4;margin-top:-4px}
+#trackMenu{width:min(440px,calc(100vw - 24px));max-height:70vh;overflow:auto}
+#trackMenu .tmh{padding:4px 8px 2px}
+#trackMenu .cat{padding-left:8px}
+#trackMenu .chips{padding:0 6px}
+.menu .chip{background:var(--chip);text-align:center}
+.menu .chip.sel{background:var(--accent);color:var(--accent-ink)}
+.head .hb button.x{margin-left:2px}
 .learn.active{background:var(--warn);color:#111}
 label.chk{display:flex;align-items:center;gap:6px;font-size:.9rem}
 .meter{height:9px;background:var(--chip);border-radius:6px;overflow:hidden;min-width:100px;flex:1 1 120px}
@@ -178,7 +185,7 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:.9rem}
   <div>
     <div class="row" style="justify-content:space-between;margin-bottom:6px">
       <b id="projName">Mein Song</b>
-      <span class="muted" id="hint">Doppeltippen auf eine leere Stelle einer Spur erzeugt einen neuen Bereich.</span>
+      <span class="muted" id="hint">Spurname antippen = Instrument wählen · in die Spur tippen = Noten bearbeiten</span>
     </div>
     <div class="tl">
       <div class="heads" id="heads">
@@ -186,6 +193,7 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:.9rem}
       </div>
       <div class="lanes" id="lanes"><canvas id="tlc"></canvas></div>
     </div>
+    <div class="menu hidden" id="trackMenu"></div>
     <div class="menu hidden" id="addMenu">
       <button data-t="inst">🎹 Instrument (Keyboard)</button>
       <button data-t="drums">🥁 Schlagzeug</button>
@@ -272,14 +280,15 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:.9rem}
           <h4>Grundprinzip</h4>
           <ul>
             <li>Ein Song besteht aus <b>Spuren</b> (Instrument, Schlagzeug, Mikrofon). Auf jeder Spur liegen <b>Bereiche</b> (Regionen).</li>
-            <li>Spur antippen = auswählen. Gespielt und aufgenommen wird immer auf der ausgewählten Spur.</li>
+            <li>Spurname links antippen = Spur auswählen und Instrument wechseln, umbenennen oder löschen (✕ löscht ebenfalls). Gespielt und aufgenommen wird immer auf der ausgewählten Spur.</li>
+            <li>„+ Spur“ fügt weitere Instrument-, Schlagzeug- oder Mikrofonspuren hinzu.</li>
             <li><b>●</b> startet die Aufnahme ab der Abspielposition (mit Vorzähler, falls eingeschaltet), <b>▶/■</b> beendet sie.</li>
             <li>Ins Lineal tippen setzt die Abspielposition; im Lineal ziehen legt den Bereich der <b>Schleife</b> fest.</li>
           </ul>
           <h4>Bereiche bearbeiten</h4>
           <ul>
             <li>Bereich ziehen = verschieben, rechten Rand ziehen = verlängern/kürzen.</li>
-            <li>Doppeltippen auf einen Bereich öffnet den <b>Editor</b>; Doppeltippen auf eine leere Stelle legt einen neuen Bereich an.</li>
+            <li>Bereich antippen öffnet den <b>Editor</b> (Noten ändern). In eine leere Spur tippen legt einen Bereich mit 4 Takten an; bei Spuren mit Bereichen genügt ein Doppeltipp auf eine freie Stelle.</li>
             <li>Über der Registerleiste: Duplizieren, an der Abspielposition teilen, löschen.</li>
             <li>Alles lässt sich mit ↶ rückgängig machen.</li>
           </ul>
@@ -847,7 +856,7 @@ function mkTrack(type, name, patch){
 }
 function newProject(){
   return { format: 'tonstudio', v: 1, name: 'Mein Song', bpm: 90, loop: { on: false, start: 0, end: 16 },
-    tracks: [ mkTrack('inst', 'Klavier', 'grand'), mkTrack('drums', 'Schlagzeug', 'drums'), mkTrack('audio', 'Gesang') ] };
+    tracks: [ mkTrack('inst', 'Klavier', 'grand') ] };
 }
 function normalizeProject(p){
   p.bpm = clamp(+p.bpm || 90, 40, 240);
@@ -1625,10 +1634,10 @@ function setupTimeline(){
     const dbl = now - lastTap.time < 350 && lastTap.key === key;
     lastTap = { time: now, key };
     if (mode === 'ruler') { setPlayhead(Math.round(((x + UI.scrollX) / UI.zoom))); return; }
-    if (h.area === 'region' && dbl) { openEditor(h.r.id); return; }
+    if (h.area === 'region' && h.t.type !== 'audio') { openEditor(h.r.id); return; }
     if (h.area === 'lane') {
       UI.selRegion = null;
-      if (dbl && h.t.type !== 'audio') { createRegion(h.t, Math.floor(h.b / BPB) * BPB); return; }
+      if (h.t.type !== 'audio' && (dbl || !h.t.regions.length)) { createRegion(h.t, Math.floor(h.b / BPB) * BPB); return; }
       renderRegionBar();
     }
     drawTimeline();
@@ -1642,7 +1651,7 @@ function setupTimeline(){
 }
 function createRegion(t, start){
   snapshot();
-  const r = { id: uid(), start, len: BPB, notes: [] };
+  const r = { id: uid(), start, len: 4 * BPB, notes: [] };
   t.regions.push(r); UI.selRegion = r.id; changed(); openEditor(r.id);
 }
 
@@ -1689,15 +1698,47 @@ function renderHeads(){
     d.style.setProperty('--tc', `var(${TCOL[t.type]})`);
     const sub = t.type === 'audio' ? 'Mikrofon / Audio' : patchById(t.patch).name;
     d.innerHTML = `<div><div class="nm"></div><div class="sub"></div></div>
-      <div class="hb"><button class="m${t.mute ? ' on' : ''}" title="Stumm">M</button><button class="s${t.solo ? ' on' : ''}" title="Solo">S</button><span class="recdot" title="Aufnahme geht auf diese Spur"></span></div>`;
+      <div class="hb"><button class="m${t.mute ? ' on' : ''}" title="Stumm">M</button><button class="s${t.solo ? ' on' : ''}" title="Solo">S</button><button class="x" title="Spur löschen">✕</button><span class="recdot" title="Aufnahme geht auf diese Spur"></span></div>`;
     d.querySelector('.nm').textContent = TICON[t.type] + ' ' + t.name;
-    d.querySelector('.sub').textContent = sub;
-    d.onclick = e => { if (e.target.closest('button')) return; selectTrack(t.id); };
-    d.ondblclick = () => renameTrack(t);
+    d.querySelector('.sub').textContent = sub + (t.type === 'inst' ? ' ▾' : '');
+    d.title = t.type === 'inst' ? 'Antippen: Instrument wählen' : 'Antippen: Spur-Optionen';
+    d.onclick = e => { if (e.target.closest('button')) return; e.stopPropagation(); selectTrack(t.id); openTrackMenu(t, d); };
+    d.querySelector('.x').onclick = e => { e.stopPropagation(); deleteTrack(t); };
     d.querySelector('.m').onclick = () => { t.mute = !t.mute; changed(); };
     d.querySelector('.s').onclick = () => { t.solo = !t.solo; changed(); };
     box.appendChild(d);
   });
+}
+function openTrackMenu(t, anchor){
+  const m = $('#trackMenu');
+  let html = `<div class="tmh">${TICON[t.type]} <b>${escapeHtml(t.name)}</b></div>`;
+  if (t.type === 'inst') {
+    let cat = null;
+    PATCHES.filter(p => !p.drums).forEach(p => {
+      if (p.cat !== cat) { if (cat) html += '</div>'; cat = p.cat; html += `<div class="cat">${cat}</div><div class="chips">`; }
+      html += `<button class="chip${t.patch === p.id ? ' sel' : ''}" data-p="${p.id}">${p.name}</button>`;
+    });
+    html += '</div><hr>';
+  }
+  html += `${t.type !== 'audio' ? '<button data-a="edit">♪ Noten bearbeiten</button>' : ''}
+    <button data-a="ren">✎ Umbenennen</button><button data-a="del">🗑 Spur löschen</button>`;
+  m.innerHTML = html;
+  m.querySelectorAll('[data-p]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    if (t.patch !== b.dataset.p) { snapshot(); t.patch = b.dataset.p; changed(); }
+    if (ctx) { const st = G.strips.get(t.id); [60, 64, 67].forEach((n, i) => noteOn(n, 0.7, { patch: patchById(t.patch), out: st ? st.in : G.bus, when: ctx.currentTime + i * 0.12, dur: 0.6, src: 'prev' })); }
+    openTrackMenu(t, anchor);
+  });
+  m.querySelectorAll('[data-a]').forEach(b => b.onclick = e => {
+    e.stopPropagation(); m.classList.add('hidden');
+    if (b.dataset.a === 'ren') renameTrack(t);
+    if (b.dataset.a === 'del') deleteTrack(t);
+    if (b.dataset.a === 'edit') { if (t.regions.length) openEditor([...t.regions].sort((a, c) => a.start - c.start)[0].id); else createRegion(t, Math.floor(T.playhead / BPB) * BPB); }
+  });
+  m.classList.remove('hidden');
+  const r = anchor.getBoundingClientRect(), mw = m.offsetWidth;
+  m.style.left = Math.max(8, Math.min(r.right + 6, innerWidth - mw - 8)) + 'px';
+  m.style.top = (r.top + scrollY) + 'px';
 }
 function selectTrack(id){ UI.selTrack = id; renderHeads(); drawTimeline(); renderPlayPanel(); }
 function renameTrack(t){ const n = prompt('Name der Spur:', t.name); if (n && n.trim()) { snapshot(); t.name = n.trim().slice(0, 40); changed(); } }
@@ -1731,7 +1772,11 @@ const PATTERNS = {
   'Ballade':    { 36: 'x.........x.....', 37: '....x.......x...', 42: 'x...x...x...x...' },
 };
 const EKEY = 46, EROWH = 14, ERULE = 20, DLAB = 92, DROWH = 26;
-function openEditor(id){ UI.selRegion = id; UI.ed.regionId = id; UI.ed.sel.clear(); UI.ed.scrollX = 0; UI.ed.scrollY = null; switchTab('edit'); renderAll(); }
+function openEditor(id){
+  UI.selRegion = id; UI.ed.regionId = id; UI.ed.sel.clear(); UI.ed.scrollX = 0; UI.ed.scrollY = null; switchTab('edit'); renderAll();
+  const r = $('#tab-edit').getBoundingClientRect();
+  if (r.top > innerHeight - 120) $('#tabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 function edRegion(){ const f = findRegion(UI.ed.regionId) || findRegion(UI.selRegion); return f && f.t.type !== 'audio' ? f : null; }
 function edSize(f){ const w = $('#edWrap').clientWidth; return { w, h: f && f.t.type === 'drums' ? ERULE + DRUM_ROWS.length * DROWH : Math.min(360, Math.max(240, Math.round(window.innerHeight * 0.5))) }; }
 function renderEditorBar(){
@@ -2195,7 +2240,7 @@ function setupUI(){
   const place = (m, btn) => { const r = btn.getBoundingClientRect(); m.style.left = Math.max(8, Math.min(r.left, innerWidth - 250)) + 'px'; m.style.top = (r.bottom + scrollY + 4) + 'px'; };
   $('#menuBtn').onclick = e => { e.stopPropagation(); addMenu.classList.add('hidden'); menu.classList.toggle('hidden'); place(menu, $('#menuBtn')); };
   $('#addTrackBtn').onclick = e => { e.stopPropagation(); menu.classList.add('hidden'); addMenu.classList.toggle('hidden'); place(addMenu, $('#addTrackBtn')); };
-  document.addEventListener('click', e => { if (!e.target.closest('.menu')) { menu.classList.add('hidden'); addMenu.classList.add('hidden'); } });
+  document.addEventListener('click', e => { if (!e.target.closest('.menu')) { menu.classList.add('hidden'); addMenu.classList.add('hidden'); $('#trackMenu').classList.add('hidden'); } });
   addMenu.querySelectorAll('button').forEach(b => b.onclick = () => { addMenu.classList.add('hidden'); addTrack(b.dataset.t); });
   menu.querySelectorAll('button').forEach(b => b.onclick = async () => {
     menu.classList.add('hidden'); ensureAudio();
