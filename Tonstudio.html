@@ -122,7 +122,8 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:.9rem}
 .cols{display:grid;gap:14px;grid-template-columns:1fr}
 @media (min-width:900px){ .cols{grid-template-columns:1fr 1fr;} }
 .edbar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:8px}
-.edwrap{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.edwrap{border:1px solid var(--line);border-radius:8px;overflow:hidden;position:relative}
+.ovl{position:absolute;left:0;top:0;pointer-events:none}
 .overlay{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 90%,transparent);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
 .overlay .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:460px;text-align:center;display:grid;gap:10px;padding:22px}
 .overlay .box button{font-size:1.1rem;padding:12px 20px}
@@ -191,7 +192,7 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:.9rem}
       <div class="heads" id="heads">
         <div class="rh"><button id="addTrackBtn">+ Spur</button></div>
       </div>
-      <div class="lanes" id="lanes"><canvas id="tlc"></canvas></div>
+      <div class="lanes" id="lanes"><canvas id="tlc"></canvas><canvas id="tlo" class="ovl"></canvas></div>
     </div>
     <div class="menu hidden" id="trackMenu"></div>
     <div class="menu hidden" id="addMenu">
@@ -236,7 +237,7 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:.9rem}
 
     <section class="panel hidden" id="tab-edit">
       <div class="edbar" id="edBar"></div>
-      <div class="edwrap" id="edWrap"><canvas id="edc"></canvas></div>
+      <div class="edwrap" id="edWrap"><canvas id="edc"></canvas><canvas id="edo" class="ovl"></canvas></div>
       <p class="muted" id="edHint" style="margin:8px 0 0"></p>
     </section>
 
@@ -267,6 +268,13 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:.9rem}
             <button id="calBtn">Latenz messen</button>
           </div>
           <p class="muted">Messen: Kopfhörer abziehen, Lautsprecher laut stellen, ruhige Umgebung. Das Tonstudio spielt fünf Klicks und misst, wie spät das Mikrofon sie hört. Dieser Wert wird bei Gesangsaufnahmen automatisch abgezogen, damit die Aufnahme genau zur Begleitung passt.</p>
+          <h3 style="margin-top:14px">Live-Spiel</h3>
+          <label class="chk"><input type="checkbox" id="fastChk"> Direkter Anschlag: Streicher, Chor, Flöte, Bläser und Flächen setzen sofort ein (klingt weniger natürlich)</label>
+          <div class="row" style="margin-top:8px">
+            <label class="chk">Audiopuffer <select id="latHintSel"><option value="interactive">Standard (niedrige Latenz)</option><option value="min">Minimal (experimentell)</option></select></label>
+            <button id="reloadBtn" class="hidden">Jetzt neu starten</button>
+          </div>
+          <p class="muted">Ob „Minimal“ etwas bringt, hängt vom Gerät ab: Nach dem Neustart oben die gemeldete Verzögerung vergleichen. Wird der Ton knacksig, wieder „Standard“ wählen.</p>
           <h3 style="margin-top:14px">Mikrofon</h3>
           <div class="row"><span class="muted">Pegel</span><div class="meter"><i id="micMeter"></i></div></div>
           <p class="muted">Der Pegel wird angezeigt, sobald das Mikrofon einmal benutzt wurde.</p>
@@ -447,7 +455,10 @@ function noise(v){
 function gainN(x){ const g = ctx.createGain(); g.gain.value = x; return g; }
 function filt(type, f, Q){ const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = cf(f); b.Q.value = Q; return b; }
 function perc(p, t, peak, a, tau){ p.setValueAtTime(0, t); p.linearRampToValueAtTime(peak, t + a); p.setTargetAtTime(0, t + a, tau); }
-function attackSus(p, t, peak, a){ p.setValueAtTime(0, t); p.linearRampToValueAtTime(peak, t + a); }
+// „Direkter Anschlag“: verkürzt langsame Einschwingvorgänge auf höchstens 12 ms
+let FAST = false;
+const atk = a => FAST ? Math.min(a, 0.012) : a;
+function attackSus(p, t, peak, a){ p.setValueAtTime(0, t); p.linearRampToValueAtTime(peak, t + atk(a)); }
 function vib(v, t, rate, cents, delay, targets){
   const l = osc(v, 'sine', rate, t, 0, null, false), g = gainN(0);
   g.gain.setValueAtTime(0, t + delay); g.gain.linearRampToValueAtTime(cents, t + delay + 0.5);
@@ -518,13 +529,40 @@ function ksBuffer(f, t60, bright){
   }
   return { buf, rate: f * (N + 0.5) / sr };
 }
+// Zwischenspeicher: pro Instrument und Tonhöhe wird die Saite nur einmal berechnet (LRU, max. ca. 32 MB).
+// Die Anschlagstärke wirkt danach über einen Tiefpass (leiser gezupft = dunkler).
+const KS_CACHE = new Map(), KS_BUDGET = 8e6;
+let ksSamples = 0;
+function ksGet(o, f){
+  const key = o._k + '|' + f.toFixed(3);
+  let e = KS_CACHE.get(key);
+  if (e) { KS_CACHE.delete(key); KS_CACHE.set(key, e); return e; }
+  e = ksBuffer(f, o.t60(f), o.b0 + o.b1 * 0.85);
+  KS_CACHE.set(key, e); ksSamples += e.buf.length;
+  while (ksSamples > KS_BUDGET && KS_CACHE.size > 1) { const [k, old] = KS_CACHE.entries().next().value; KS_CACHE.delete(k); ksSamples -= old.buf.length; }
+  return e;
+}
+let ksWarmJob = 0;
+function warmKs(patch){                 // Saiten im Hintergrund vorberechnen (Tonumfang C2–C6)
+  const o = patch && patch.build && patch.build._ks; if (!o || !ctx) return;
+  const job = ++ksWarmJob, notes = [];
+  for (let n = 36; n <= 84; n++) notes.push(n);
+  const step = () => {
+    if (job !== ksWarmJob || !notes.length || exporting) return;
+    const t0 = performance.now();
+    while (notes.length && performance.now() - t0 < 4) ksGet(o, mtof(notes.shift() + (patch.transpose || 0)));
+    setTimeout(step, 30);
+  };
+  setTimeout(step, 50);
+}
 function ksBuild(o){
-  return (v, f, vel, t, a) => {
-    const { buf, rate } = ksBuffer(f, o.t60(f), o.b0 + o.b1 * vel);
+  o._k = uid();
+  const fn = (v, f, vel, t, a) => {
+    const { buf, rate } = ksGet(o, f);
     const s = ctx.createBufferSource(); s.buffer = buf; s.playbackRate.value = rate;
     track(v, s, true);
-    let node = s;
-    if (o.lp) { const l = filt('lowpass', o.lp, 0.7); node.connect(l); node = l; }
+    let node = filt('lowpass', Math.min(o.lp || 20000, 700 + 11000 * vel * vel), 0.5);
+    s.connect(node);
     if (o.body) {
       const pk = ctx.createBiquadFilter(); pk.type = 'peaking';
       pk.frequency.value = o.body; pk.gain.value = 5; pk.Q.value = 1.2;
@@ -534,6 +572,8 @@ function ksBuild(o){
     v.amp.gain.setValueAtTime(a, t);
     return buf.duration / rate;
   };
+  fn._ks = o;
+  return fn;
 }
 
 /* ================================================================
@@ -644,7 +684,7 @@ const PATCHES = [
       n.connect(bp).connect(ng).connect(v.amp);
       vib(v, t, 5, 12, 0.3, [o]);
       const g = v.amp.gain;
-      g.setValueAtTime(0, t); g.linearRampToValueAtTime(a * 0.75, t + 0.07); g.setTargetAtTime(a * 0.6, t + 0.07, 0.1);
+      g.setValueAtTime(0, t); g.linearRampToValueAtTime(a * 0.75, t + atk(0.07)); g.setTargetAtTime(a * 0.6, t + atk(0.07), 0.1);
       return Infinity;
     } },
   { id: 'trumpet', name: 'Trompete', cat: 'Bläser', gm: 56, release: 0.1, level: 0.75,
@@ -804,7 +844,7 @@ function noteOn(note, vel, o = {}){
   stealIfNeeded();
   const a = 0.06 + 0.94 * Math.pow(clamp(vel, 0, 1), 1.6);
   const v = mkVoice(patch.release, patch.level, o.out);
-  v.src = src;
+  v.src = src; FAST = !!S.fastAttack;
   if (patch.drums) { launch(v, when, drumBuild(v, note, vel, when, a)); return v; }
   const timed = o.dur !== undefined, key = src + ':' + note;
   if (!timed) { const old = G.held.get(key); if (old) releaseVoice(old, when); }
@@ -845,6 +885,7 @@ const AUD = new Map();                           // Audio: id → {buffer, bytes
 const S = store.get('tonstudio.settings', {});   // Geräteeinstellungen
 S.params = Object.assign({ volume: 0.8, reverb: 0.2, bright: 1, vibrato: 0 }, S.params || {});
 S.ccMap = S.ccMap || null; S.ch10 = S.ch10 ?? true; S.pc = S.pc ?? true; S.octave = S.octave || 0;
+S.fastAttack = !!S.fastAttack; S.latHint = S.latHint || 'interactive';
 S.key = S.key || 0; S.bass = S.bass ?? true; S.latAudioMs = S.latAudioMs ?? null; S.metro = S.metro ?? false; S.countIn = S.countIn ?? true;
 const saveSettings = () => store.set('tonstudio.settings', S);
 const UI = { selTrack: null, selRegion: null, zoom: 26, scrollX: 0, tab: 'play',
@@ -895,6 +936,7 @@ function afterLoad(){
 }
 function changed(){
   if (G) syncStrips(G);
+  if (ctx) warmSelected();
   renderAll();
   scheduleAutosave();
   updUndo();
@@ -1252,7 +1294,7 @@ if (!S.ccMap) S.ccMap = defaultCcMap();
 let learn = null;
 function setParam(id, x){ S.params[id] = clamp(x, 0, 1); if (liveGraph) applyParam(liveGraph, id, S.params[id]); saveSettings(); const el = document.getElementById('p_' + id); if (el && +el.value !== S.params[id]) el.value = S.params[id]; }
 const monLines = [];
-function monitor(txt){ monLines.unshift(txt); monLines.length = Math.min(monLines.length, 6); $('#monitor').textContent = monLines.join('\n'); }
+function monitor(txt){ monLines.unshift(txt); monLines.length = Math.min(monLines.length, 6); if (UI.tab === 'set') $('#monitor').textContent = monLines.join('\n'); }
 function onMidi(e){
   const d = e.data; if (!d || !d.length || !ctx) return;
   const st = d[0] & 0xF0, ch = d[0] & 0x0F, chT = 'Kanal ' + (ch + 1);
@@ -1550,12 +1592,17 @@ function drawTimeline(){
       c.restore();
     });
   });
-  // laufende Aufnahme
+  drawTlOverlay();
+}
+// Abspielposition und laufende Aufnahme auf einer eigenen, leichten Ebene (wird während der Wiedergabe allein neu gezeichnet)
+function drawTlOverlay(){
+  const cv = $('#tlo'), { w, h } = tlSize(); if (!w) return;
+  const c = fitCanvas(cv, w, h), pxb = UI.zoom, bx = b => b * pxb - UI.scrollX;
+  c.clearRect(0, 0, w, h);
   if (T.rec && T.playing) {
     const i = P.tracks.findIndex(t => t.id === T.rec.track), now = displayBeat(ctx.currentTime);
     if (i >= 0 && now > T.rec.from) { c.fillStyle = alpha(COL.rec, 0.25); c.fillRect(bx(T.rec.from), RULER + i * ROW + 4, (now - T.rec.from) * pxb, ROW - 8); }
   }
-  // Abspielposition
   const ph = bx(T.playing ? Math.max(0, displayBeat(ctx.currentTime)) : T.playhead);
   if (ph >= -2 && ph <= w + 2) {
     c.fillStyle = T.rec ? COL.rec : COL.ink; c.fillRect(Math.round(ph) - 1, 0, 2, h);
@@ -1740,7 +1787,8 @@ function openTrackMenu(t, anchor){
   m.style.left = Math.max(8, Math.min(r.right + 6, innerWidth - mw - 8)) + 'px';
   m.style.top = (r.top + scrollY) + 'px';
 }
-function selectTrack(id){ UI.selTrack = id; renderHeads(); drawTimeline(); renderPlayPanel(); }
+function selectTrack(id){ UI.selTrack = id; renderHeads(); drawTimeline(); renderPlayPanel(); warmSelected(); }
+function warmSelected(){ const t = trackById(UI.selTrack); if (t && t.type === 'inst') warmKs(patchById(t.patch)); }
 function renameTrack(t){ const n = prompt('Name der Spur:', t.name); if (n && n.trim()) { snapshot(); t.name = n.trim().slice(0, 40); changed(); } }
 function addTrack(type){
   snapshot();
@@ -1892,11 +1940,16 @@ function drawEditor(){
   c.fillStyle = COL.muted; c.font = '11px system-ui, sans-serif'; c.textBaseline = 'middle';
   for (let b = 0; b < r.len + 4; b += BPB) { const x = X(b); if (x >= left - 1 && x < w) c.fillText('Takt ' + fmtPos(r.start + b).split('.')[0], x + 3, ERULE / 2); }
   c.fillStyle = COL.line; c.fillRect(0, ERULE - 1, w, 1);
-  // Abspielposition
-  if (T.playing) {
-    const b = displayBeat(ctx.currentTime) - r.start, x = X(b);
-    if (b >= 0 && b <= r.len && x >= left) { c.fillStyle = COL.ink; c.fillRect(Math.round(x), 0, 2, h); }
-  }
+  UI.edGeo = { left, z, sx: UI.ed.scrollX, start: r.start, len: r.len, w, h };
+  drawEdOverlay();
+}
+function drawEdOverlay(){
+  const cv = $('#edo'), g = UI.edGeo;
+  if (UI.tab !== 'edit' || !g || !edRegion()) { fitCanvas(cv, 1, 1).clearRect(0, 0, 1, 1); return; }
+  const c = fitCanvas(cv, g.w, g.h); c.clearRect(0, 0, g.w, g.h);
+  if (!T.playing) return;
+  const b = displayBeat(ctx.currentTime) - g.start, x = g.left + b * g.z - g.sx;
+  if (b >= 0 && b <= g.len && x >= g.left) { c.fillStyle = COL.ink; c.fillRect(Math.round(x), 0, 2, g.h); }
 }
 const edDrag = { mode: null };
 let edLastTap = { time: 0, note: null };
@@ -2135,8 +2188,12 @@ function renderSettings(){
   $('#ch10Chk').checked = S.ch10; $('#pcChk').checked = S.pc;
   $('#latAudio').value = S.latAudioMs ?? '';
   $('#latAudio').placeholder = ctx ? String(defaultLatMs()) : '';
+  $('#fastChk').checked = S.fastAttack; $('#latHintSel').value = S.latHint;
+  if (UI.tab === 'set') $('#monitor').textContent = monLines.length ? monLines.join('\n') : 'Noch keine MIDI-Daten empfangen.';
+  const ms = x => x === undefined ? '–' : (x * 1000).toFixed(1).replace('.', ',') + ' ms';
   $('#latInfo').textContent = ctx
-    ? `Vom Browser gemeldete Ausgabeverzögerung: ca. ${Math.round(outLat() * 1000)} ms. Sie wird bei MIDI-Aufnahmen automatisch ausgeglichen. Mikrofon-Ausgleich: ${S.latAudioMs !== null ? S.latAudioMs + ' ms (gemessen/eingestellt)' : 'noch nicht gemessen – Schätzwert ' + defaultLatMs() + ' ms'}.`
+    ? `Vom Browser gemeldete Ausgabeverzögerung: ca. ${Math.round(outLat() * 1000)} ms (Puffer ${ms(ctx.baseLatency)} + Gerät ${ms(ctx.outputLatency)}, Abtastrate ${ctx.sampleRate} Hz).`
+      + ` Hinzu kommen das Keyboard (ca. 1 ms) und die Verarbeitung im Browser. Die Ausgabeverzögerung wird bei MIDI-Aufnahmen automatisch ausgeglichen. Mikrofon-Ausgleich: ${S.latAudioMs !== null ? S.latAudioMs + ' ms (gemessen/eingestellt)' : 'noch nicht gemessen – Schätzwert ' + defaultLatMs() + ' ms'}.`
     : '';
 }
 
@@ -2162,7 +2219,7 @@ function updTransport(){
   $('#loopBtn').classList.toggle('on', P.loop.on);
   updPos();
 }
-function updPos(){ $('#pos').textContent = fmtPos(ctx && T.playing ? displayBeat(ctx.currentTime) : T.playhead); }
+function updPos(){ const s = fmtPos(ctx && T.playing ? displayBeat(ctx.currentTime) : T.playhead), el = $('#pos'); if (el.textContent !== s) el.textContent = s; }
 let toastTimer = null;
 function toast(msg, ms = 4000){ const t = $('#toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add('hidden'), ms); }
 
@@ -2171,9 +2228,9 @@ function frame(){
     if (T.playing) {
       updPos();
       const b = Math.max(0, displayBeat(ctx.currentTime)), x = b * UI.zoom - UI.scrollX, w = $('#lanes').clientWidth;
-      if (x > w - 30 || x < 0) UI.scrollX = clamp(b * UI.zoom - 40, 0, maxScrollX());
-      drawTimeline();
-      if (UI.tab === 'edit') drawEditor();
+      if (x > w - 30 || x < 0) { UI.scrollX = clamp(b * UI.zoom - 40, 0, maxScrollX()); drawTimeline(); }
+      else drawTlOverlay();
+      if (UI.tab === 'edit') drawEdOverlay();
     }
     const meters = [$('#micMeter'), $('#micMeter2')].filter(Boolean);
     if (M.analyser && meters.length) {
@@ -2193,7 +2250,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 function ensureAudio(){
   if (!ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
-    let c; try { c = new AC({ latencyHint: 'interactive' }); } catch(e) { c = new AC(); }
+    let c; try { c = new AC({ latencyHint: S.latHint === 'min' ? 0.001 : 'interactive' }); } catch(e) { c = new AC(); }
     liveGraph = makeGraph(c, S.params, false); setGraph(liveGraph);
     syncStrips(G);
     setInterval(() => { if (!exporting) schedTick(); }, 25);
@@ -2263,6 +2320,9 @@ function setupUI(){
   $('#pcChk').onchange = e => { S.pc = e.target.checked; saveSettings(); };
   $('#latAudio').onchange = e => { const v = e.target.value === '' ? null : clamp(Math.round(+e.target.value), 0, 800); S.latAudioMs = v; saveSettings(); renderSettings(); };
   $('#calBtn').onclick = () => { ensureAudio(); calibrate(); };
+  $('#fastChk').onchange = e => { S.fastAttack = e.target.checked; saveSettings(); };
+  $('#latHintSel').onchange = e => { S.latHint = e.target.value; saveSettings(); $('#reloadBtn').classList.remove('hidden'); toast('Wird nach einem Neustart der Seite wirksam.'); };
+  $('#reloadBtn').onclick = async () => { clearTimeout(saveTimer); await idb.put('project', JSON.stringify(P)); location.reload(); };
   // Datei per Ziehen & Ablegen (Laptop)
   addEventListener('dragover', e => e.preventDefault());
   addEventListener('drop', async e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) { ensureAudio(); await handleFile(f); } });
