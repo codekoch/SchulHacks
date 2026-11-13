@@ -162,6 +162,9 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:.9rem}
       <label class="chk" title="Tempo in Schlägen pro Minute">♩ = <input type="number" id="bpm" min="40" max="240" value="90"></label>
       <button id="metroBtn" title="Metronom (wird nicht exportiert)">Metronom</button>
       <button id="countBtn" title="Ein Takt Vorzähler vor der Aufnahme">Vorzähler</button>
+      <label class="chk" title="Die Aufnahme stoppt nach dieser Länge automatisch">Aufnahme
+        <select id="recBarsSel"><option value="0">frei</option><option value="1">1 Takt</option><option value="2">2 Takte</option><option value="4">4 Takte</option><option value="8">8 Takte</option><option value="12">12 Takte</option><option value="16">16 Takte</option><option value="24">24 Takte</option><option value="32">32 Takte</option></select>
+      </label>
       <button id="loopBtn" title="Schleife: im Lineal über der Zeitleiste einen Bereich ziehen">Schleife</button>
     </div>
     <div class="grp">
@@ -290,7 +293,7 @@ label.chk{display:flex;align-items:center;gap:6px;font-size:.9rem}
             <li>Ein Song besteht aus <b>Spuren</b> (Instrument, Schlagzeug, Mikrofon). Auf jeder Spur liegen <b>Bereiche</b> (Regionen).</li>
             <li>Spurname links antippen = Spur auswählen und Instrument wechseln, umbenennen oder löschen (✕ löscht ebenfalls). Gespielt und aufgenommen wird immer auf der ausgewählten Spur.</li>
             <li>„+ Spur“ fügt weitere Instrument-, Schlagzeug- oder Mikrofonspuren hinzu.</li>
-            <li><b>●</b> startet die Aufnahme ab der Abspielposition (mit Vorzähler, falls eingeschaltet), <b>▶/■</b> beendet sie.</li>
+            <li><b>●</b> startet die Aufnahme ab der Abspielposition (mit Vorzähler, falls eingeschaltet), <b>▶/■</b> beendet sie. Ist bei „Aufnahme“ eine Taktzahl eingestellt, stoppt sie nach dieser Länge von selbst und die Abspielposition springt zum Anhören an den Anfang zurück.</li>
             <li>Ins Lineal tippen setzt die Abspielposition; im Lineal ziehen legt den Bereich der <b>Schleife</b> fest.</li>
           </ul>
           <h4>Bereiche bearbeiten</h4>
@@ -885,7 +888,7 @@ const AUD = new Map();                           // Audio: id → {buffer, bytes
 const S = store.get('tonstudio.settings', {});   // Geräteeinstellungen
 S.params = Object.assign({ volume: 0.8, reverb: 0.2, bright: 1, vibrato: 0 }, S.params || {});
 S.ccMap = S.ccMap || null; S.ch10 = S.ch10 ?? true; S.pc = S.pc ?? true; S.octave = S.octave || 0;
-S.fastAttack = !!S.fastAttack; S.latHint = S.latHint || 'interactive';
+S.fastAttack = !!S.fastAttack; S.recBars = +S.recBars || 0; S.latHint = S.latHint || 'interactive';
 S.key = S.key || 0; S.bass = S.bass ?? true; S.latAudioMs = S.latAudioMs ?? null; S.metro = S.metro ?? false; S.countIn = S.countIn ?? true;
 const saveSettings = () => store.set('tonstudio.settings', S);
 const UI = { selTrack: null, selRegion: null, zoom: 26, scrollX: 0, tab: 'play',
@@ -1060,7 +1063,7 @@ function startAudioAt(beat, t){
   for (const tr of P.tracks) {
     if (tr.type !== 'audio') continue;
     const strip = G.strips.get(tr.id);
-    for (const r of tr.regions) if (r.start < beat && r.start + r.len > beat) playAudioRegion(r, strip, t, beat - r.start, T.loop ? T.loop.end : undefined);
+    for (const r of tr.regions) if (r.start < beat && r.start + r.len > beat) playAudioRegion(r, strip, t, beat - r.start, T.loop ? T.loop.end : (isFinite(recUntil()) ? recUntil() : undefined));
   }
 }
 function setLoopFromProject(){
@@ -1094,15 +1097,21 @@ function schedTick(){
       startAudioAt(T.loop.start, tEnd);
       continue;
     }
-    scheduleRange(b0, b1, liveCtxAt, T.loop ? T.loop.end : undefined, S.metro);
+    const recEnd = recUntil();
+    scheduleRange(b0, Math.min(b1, recEnd), liveCtxAt, isFinite(recEnd) ? recEnd : (T.loop ? T.loop.end : undefined), S.metro);
     T.schedCtx = horizon;
+  }
+  // Aufnahme mit fester Länge: genau am geplanten Ende stoppen, Abspielposition zurück an den Aufnahmebeginn
+  if (T.rec && isFinite(recUntil()) && beatAt(now) >= recUntil()) {
+    const from = T.rec.from; stopPlay(recUntil()); T.playhead = from; renderAll(); updPos(); return;
   }
   if (!T.rec && !T.loop && displayBeat(now) > songEnd() + BPB) { stopPlay(); T.playhead = T.from; renderAll(); }
 }
-function stopPlay(){
+const recUntil = () => T.rec && T.rec.until !== null ? T.rec.until : Infinity;
+function stopPlay(endBeat){
   if (!T.playing) return;
   const now = ctx.currentTime, b = displayBeat(now);
-  if (T.rec) finishRecording(Math.max(T.rec.from, beatAt(now)));
+  if (T.rec) finishRecording(endBeat !== undefined ? endBeat : Math.max(T.rec.from, beatAt(now)));
   T.playing = false;
   T.audioSrcs.forEach(s => { try { s.stop(); } catch(e){} }); T.audioSrcs.clear();
   T.clicks.forEach(o => { try { o.stop(); } catch(e){} }); T.clicks.clear();
@@ -1161,7 +1170,8 @@ async function startRecording(){
     try { await ensureMic(); } catch(e) { toast('Kein Mikrofon: ' + e.message); return; }
     if (S.latAudioMs === null) toast('Tipp: Unter „Einstellungen“ einmal die Latenz messen.');
   }
-  const R = T.rec = { track: t.id, type: t.type, from: T.playhead, notes: [], open: new Map(), pedal: false, pending: [], chunks: [] };
+  const R = T.rec = { track: t.id, type: t.type, from: T.playhead, until: S.recBars ? T.playhead + S.recBars * BPB : null,
+                     notes: [], open: new Map(), pedal: false, pending: [], chunks: [] };
   if (t.type === 'audio') { M.sink = d => R.chunks.push(d); M.node.port.postMessage(true); }
   startPlay(T.playhead, S.countIn ? 1 : 0);
   R.startCtx = T.anchorCtx;
@@ -1170,7 +1180,7 @@ async function startRecording(){
 const recBeat = () => beatAt(ctx.currentTime - outLat());
 function recNoteOn(t, note, vel){
   const R = T.rec; if (!R || R.track !== t.id || R.type === 'audio') return;
-  const b = recBeat(); if (b < R.from - 0.5) return;
+  const b = recBeat(); if (b < R.from - 0.5 || (R.until !== null && b >= R.until)) return;
   const s = Math.max(0, b);
   if (R.type === 'drums') { R.notes.push({ p: note, s, d: 0.25, v: vel }); return; }
   const old = R.open.get(note); if (old) { old.d = Math.max(1 / 32, s - old.s); R.notes.push(old); }
@@ -1601,6 +1611,11 @@ function drawTlOverlay(){
   c.clearRect(0, 0, w, h);
   if (T.rec && T.playing) {
     const i = P.tracks.findIndex(t => t.id === T.rec.track), now = displayBeat(ctx.currentTime);
+    if (i >= 0 && T.rec.until !== null) {
+      const y = RULER + i * ROW + 4, xe = bx(T.rec.until);
+      c.fillStyle = alpha(COL.rec, 0.08); c.fillRect(bx(T.rec.from), y, xe - bx(T.rec.from), ROW - 8);
+      c.fillStyle = COL.rec; c.fillRect(Math.round(xe) - 1, RULER, 2, h - RULER);
+    }
     if (i >= 0 && now > T.rec.from) { c.fillStyle = alpha(COL.rec, 0.25); c.fillRect(bx(T.rec.from), RULER + i * ROW + 4, (now - T.rec.from) * pxb, ROW - 8); }
   }
   const ph = bx(T.playing ? Math.max(0, displayBeat(ctx.currentTime)) : T.playhead);
@@ -2275,6 +2290,11 @@ function setupUI(){
   $('#toStart').onclick = () => setPlayhead(0);
   $('#metroBtn').onclick = () => { S.metro = !S.metro; saveSettings(); updTransport(); };
   $('#countBtn').onclick = () => { S.countIn = !S.countIn; saveSettings(); updTransport(); };
+  $('#recBarsSel').value = String(S.recBars);
+  $('#recBarsSel').onchange = e => {
+    S.recBars = +e.target.value; saveSettings();
+    if (T.rec) T.rec.until = S.recBars ? T.rec.from + S.recBars * BPB : null;
+  };
   $('#loopBtn').onclick = () => {
     if (!P.loop.on && !(P.loop.end > P.loop.start)) P.loop = { on: false, start: 0, end: 4 * BPB };
     P.loop.on = !P.loop.on; if (T.playing) setLoopFromProject(); updTransport(); changed();
